@@ -5,18 +5,30 @@ import time
 import uuid
 import threading
 from flask import Flask, request, render_template, send_file, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 
-from config import YTDLP, COOKIES_FILE, DOWNLOADS
-from cache import get_info_with_cache, set_info_cache
-from jobs import jobs, create_job, get_job, pop_job, start_cleaner
-from downloader import build_ytdlp_cmd, run, dl_direct, dl_zip
-from instagram import ig_via_instaloader
-from platforms import detect_platform, parse_image_page
+from config import DOWNLOADS
+from jobs import jobs, get_job, pop_job, start_cleaner
+from info_extractor import get_url_info
+from download_queue import enqueue_job, start_task_thread
 from history import init_db, add_entry, get_history
 from updater import start_updater
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+# Initialize Flask-Limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["60 per minute"]
+)
+
+@app.errorhandler(RateLimitExceeded)
+def ratelimit_handler(e):
+    return jsonify({"error": "Terlalu banyak request, coba lagi sebentar"}), 429
 
 @app.route('/')
 def index():
@@ -37,10 +49,31 @@ def contact():
 @app.route('/ping')
 def ping():
     from config import APP_VERSION, START_TIME
+    active_jobs = sum(1 for j in jobs.values() if j.get('status') == 'processing')
+    queued_jobs = sum(1 for j in jobs.values() if j.get('status') == 'queued')
+    
+    from cache import CACHE
+    cache_size = len(CACHE)
+    
+    total_size = 0
+    if os.path.exists(DOWNLOADS):
+        for dirpath, dirnames, filenames in os.walk(DOWNLOADS):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                try:
+                    total_size += os.path.getsize(fp)
+                except:
+                    pass
+    downloads_dir_size = round(total_size / (1024 * 1024), 2)
+    
     return jsonify({
         'status': 'ok',
         'version': APP_VERSION,
-        'uptime': int(time.time() - START_TIME)
+        'uptime': int(time.time() - START_TIME),
+        'active_jobs': active_jobs,
+        'queued_jobs': queued_jobs,
+        'cache_size': cache_size,
+        'downloads_dir_size': downloads_dir_size
     })
 
 @app.route('/history')
@@ -58,122 +91,37 @@ def admin_ytdlp_version():
     })
 
 @app.route('/info', methods=['POST'])
+@limiter.limit("20 per minute")
 def get_info():
     data = request.get_json()
     url = data.get('url', '').strip()
     if not url:
         return jsonify({'error': 'Isi linknya'}), 400
     
-    platform = detect_platform(url)
-    
-    # Check cache first
-    cached = get_info_with_cache(url)
-    if cached:
-        return jsonify(cached)
-    
-    # Instagram: try with provided credentials first, then anonymous
-    if platform == 'instagram':
+    try:
         ig_user = data.get('ig_user', '') or ''
         ig_pass = data.get('ig_pass', '') or ''
-        ig_result = ig_via_instaloader(url, ig_user, ig_pass)
-        if ig_result:
-            ig_result['platform'] = 'instagram'
-            ig_result['audio_only'] = False
-            if 'audio' not in ig_result:
-                ig_result['audio'] = []
-            has_mp3 = any(f.get('id') == 'mp3' for f in ig_result['audio'])
-            if not has_mp3:
-                ig_result['audio'].append({'id': 'mp3', 'label': 'MP3 128kbps', 'ext': 'mp3', 'size': 0, 'type': 'audio'})
-            set_info_cache(url, ig_result)
-            return jsonify(ig_result)
-            
-    try:
-        cmd = [YTDLP, '--dump-json', '--no-playlist', '--no-warnings', '--no-check-certificates', url]
-        if os.path.exists(COOKIES_FILE):
-            cmd.insert(-1, '--cookies')
-            cmd.insert(-1, COOKIES_FILE)
-        import subprocess
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
-        if r.returncode or not r.stdout:
-            ext = parse_image_page(url)
-            if ext:
-                result = {
-                    'title': 'Image',
-                    'duration': 0,
-                    'thumbnail': '',
-                    'formats': ext,
-                    'audio': [{'id': 'mp3', 'label': 'MP3 128kbps', 'ext': 'mp3', 'size': 0, 'type': 'audio'}],
-                    'platform': platform,
-                    'audio_only': False
-                }
-                set_info_cache(url, result)
-                return jsonify(result)
-            return jsonify({'error': r.stderr[:300] or 'Gak bisa'}), 400
-            
-        import json
-        info = json.loads(r.stdout.split('\n')[0])
-        formats, seen, audio_formats = [], set(), []
+        result_data = get_url_info(url, ig_user, ig_pass)
         
-        is_audio_only = True
-        for f in info.get('formats', []):
-            vcodec = f.get('vcodec', 'n')
-            if vcodec != 'n' and vcodec != 'none':
-                is_audio_only = False
-                break
-                
-        for f in info.get('formats', []):
-            vc, ac, h, fs = f.get('vcodec', 'n'), f.get('acodec', 'n'), f.get('height', 0), f.get('filesize') or f.get('filesize_approx') or 0
-            lbl = f"{h}p" if h else f.get('format_note', '?')
-            if vc != 'n' and vc != 'none' and lbl not in seen:
-                seen.add(lbl)
-                formats.append({
-                    'id': f['format_id'],
-                    'label': lbl,
-                    'ext': f.get('ext', 'mp4'),
-                    'height': h,
-                    'size': fs,
-                    'type': 'video'
-                })
-                
-        seen_audio = set()
-        for f in info.get('formats', []):
-            acodec = f.get('acodec', 'n')
-            if acodec != 'n' and acodec != 'none' and f.get('vcodec', 'n') in ('n', 'none'):
-                fs, ab = f.get('filesize') or f.get('filesize_approx') or 0, f.get('abr', 0)
-                label = f"{int(ab)}kbps" if ab else 'Audio'
-                if label not in seen_audio:
-                    seen_audio.add(label)
-                    audio_formats.append({
-                        'id': f['format_id'],
-                        'label': label,
-                        'ext': f.get('ext', 'm4a') if f.get('ext') != 'webm' else 'm4a',
-                        'size': fs,
-                        'type': 'audio'
-                    })
-                    
-        formats.sort(key=lambda x: x['height'] or 0, reverse=True)
-        if formats:
-            formats.insert(0, {'id': 'best', 'label': 'Best', 'ext': 'mp4', 'height': info.get('height', 0), 'size': 0, 'type': 'video'})
-            
-        audio_formats.append({'id': 'mp3', 'label': 'MP3 128kbps', 'ext': 'mp3', 'size': 0, 'type': 'audio'})
-        
-        result_data = {
-            'title': info.get('title', '?'),
-            'duration': info.get('duration', 0),
-            'thumbnail': info.get('thumbnail', ''),
-            'formats': formats,
-            'audio': audio_formats,
-            'platform': platform,
-            'audio_only': is_audio_only
+        # Smart pick best formats for each context
+        from smart_pick import pick_best_format
+        all_formats = result_data.get('formats', []) + result_data.get('audio', [])
+        recommended_format_id = pick_best_format(all_formats, data.get('context', 'save'))
+        recommendations = {
+            'save': pick_best_format(all_formats, 'save'),
+            'share': pick_best_format(all_formats, 'share'),
+            'audio': pick_best_format(all_formats, 'audio')
         }
-        set_info_cache(url, result_data)
-        return jsonify(result_data)
-    except subprocess.TimeoutExpired:
-        return jsonify({'error': 'Timeout'}), 408
+        
+        res = dict(result_data)
+        res['recommended_format_id'] = recommended_format_id
+        res['recommendations'] = recommendations
+        return jsonify(res)
     except Exception as e:
-        return jsonify({'error': str(e)[:300]}), 400
+        return jsonify({'error': str(e)}), 400
 
 @app.route('/download', methods=['POST'])
+@limiter.limit("10 per minute")
 def start():
     data = request.get_json()
     url = data.get('url', '').strip()
@@ -188,45 +136,45 @@ def start():
         return jsonify({'error': 'Isi linknya'}), 400
         
     jid = str(uuid.uuid4())[:8]
-    out = os.path.join(DOWNLOADS, f'dl_{jid}')
+    res = enqueue_job(jid, url, fmt_id, ftype, direct_url, title, platform, items)
+    return jsonify(res)
+
+@app.route('/download-zip', methods=['POST'])
+@limiter.limit("5 per minute")
+def start_zip():
+    data = request.get_json()
+    url = data.get('url', '').strip()
+    fmt_id = data.get('format_id', 'best')
+    ftype = data.get('type', 'video')
+    direct_url = data.get('direct_url', '')
+    title = data.get('title', 'Unknown')
+    platform = data.get('platform', 'unknown')
+    items = data.get('items', [])
     
-    job = create_job(jid)
-    job['title'] = title
-    job['platform'] = platform
-    job['url'] = url
-    
-    if ftype == 'zip' and items:
-        threading.Thread(target=lambda: dl_zip(jid, items, out), daemon=True).start()
-        return jsonify({'job_id': jid})
+    if not url:
+        return jsonify({'error': 'Isi linknya'}), 400
         
-    if direct_url and ftype in ('image', 'video'):
-        threading.Thread(target=lambda: dl_direct(jid, direct_url, out), daemon=True).start()
-        return jsonify({'job_id': jid})
-        
-    cmd = build_ytdlp_cmd([YTDLP, '-o', f'{out}.%(ext)s', '--newline'], url)
-    if ftype == 'audio' or fmt_id == 'mp3':
-        cmd += ['-x', '--audio-format', 'mp3', '--audio-quality', '0']
-    elif fmt_id == 'best':
-        cmd += ['-f', 'best[ext=mp4]/best']
-    else:
-        cmd += ['-f', f'{fmt_id}+bestaudio/best']
-        
-    threading.Thread(target=lambda: run(jid, cmd, out), daemon=True).start()
-    return jsonify({'job_id': jid})
+    jid = str(uuid.uuid4())[:8]
+    res = enqueue_job(jid, url, fmt_id, ftype, direct_url, title, platform, items)
+    return jsonify(res)
 
 @app.route('/status/<jid>')
 def status(jid):
     j = get_job(jid)
     if not j:
         return jsonify({'status': 'not_found'})
-    return jsonify({
+    resp = {
         'status': j['status'],
         'file': j.get('file'),
         'progress': j.get('progress', 0),
         'speed': j.get('speed', ''),
         'eta': j.get('eta', ''),
         'error': j.get('error')
-    })
+    }
+    if j['status'] == 'queued':
+        from jobs import get_queue_position
+        resp['position'] = get_queue_position(jid)
+    return jsonify(resp)
 
 @app.route('/file/<jid>')
 def send_file_route(jid):
@@ -256,8 +204,43 @@ def send_file_route(jid):
         pop_job(jid)
     return resp
 
+def scheduler_loop():
+    while True:
+        time.sleep(3)
+        # Count active jobs where status == 'processing'
+        active_count = sum(1 for j in jobs.values() if j.get('status') == 'processing')
+        if active_count < 2: # MAX_CONCURRENT = 2
+            # Promote oldest queued job
+            queued_jids = [k for k, v in jobs.items() if v.get('status') == 'queued']
+            if queued_jids:
+                queued_jids.sort(key=lambda k: jobs[k].get('_created', 0))
+                next_jid = queued_jids[0]
+                next_job = jobs[next_jid]
+                task = next_job.get('task')
+                if task:
+                    next_job['status'] = 'processing'
+                    start_task_thread(
+                        jid=next_jid,
+                        ftype=task.get('ftype'),
+                        out=task.get('out'),
+                        items=task.get('items'),
+                        direct_url=task.get('direct_url'),
+                        cmd=task.get('cmd')
+                    )
+
 if __name__ == '__main__':
     init_db()
     start_cleaner()
     start_updater()
+    
+    # Start download queue scheduler
+    threading.Thread(target=scheduler_loop, daemon=True).start()
+    
+    # Start Telegram Bot if token is available
+    try:
+        from bot import start_bot
+        start_bot()
+    except Exception as e:
+        print(f"Failed to load Telegram bot: {e}")
+        
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

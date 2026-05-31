@@ -82,11 +82,6 @@ def dl_zip(jid, items, out):
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for fp, filename in filepaths:
                 zipf.write(fp, filename)
-        
-        try:
-            shutil.rmtree(temp_dir)
-        except:
-            pass
             
         job = jobs.get(jid)
         if job:
@@ -103,8 +98,10 @@ def dl_zip(jid, items, out):
         if job:
             job['status'] = 'error'
             job['error'] = str(e)
+    finally:
         try:
-            shutil.rmtree(temp_dir)
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
         except:
             pass
 
