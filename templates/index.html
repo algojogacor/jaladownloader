@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>JalaDownloader — Video & Audio Downloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{color-scheme:dark;--canvas:#08080C;--canvas-parchment:#0d1114;--surface-1:#111418;--surface-2:#161a1f;--surface-3:#1a1f24;--surface-black:#050508;--accent:#10b981;--accent-hover:#34d399;--accent-press:#059669;--accent-muted:#064e3b;--accent-glow:rgba(16,185,129,0.15);--ink:#f0f1f3;--ink-muted:#b0b8c1;--ink-subtle:#6b7280;--ink-tertiary:#404550;--hairline:#1e2430;--hairline-strong:#2a3040;--success:#0f6e56;--warning:#b45309;--error:#dc2626}
+[data-theme="light"]{color-scheme:light;--canvas:#f8f9fa;--canvas-parchment:#f0f1f3;--surface-1:#ffffff;--surface-2:#f5f5f7;--surface-3:#eeeeee;--surface-black:#1d1d1f;--accent:#059669;--accent-hover:#047857;--accent-press:#065f46;--accent-muted:#d1fae5;--accent-glow:rgba(5,150,105,0.12);--ink:#1d1d1f;--ink-muted:#555;--ink-subtle:#8a8a8a;--ink-tertiary:#aaa;--hairline:#e0e0e0;--hairline-strong:#ccc}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Geist',system-ui,-apple-system,sans-serif;font-size:17px;font-weight:400;line-height:1.47;letter-spacing:-0.01em;color:var(--ink);background:var(--canvas);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden}
+::selection{background:var(--accent);color:#000}
+img{max-width:100%;height:auto}
+.display-hero{font-size:clamp(1.8rem,7vw,3.5rem);font-weight:600;line-height:1.07;letter-spacing:-0.028em}
+.display-lg{font-size:clamp(1.8rem,5vw,2.5rem);font-weight:600;line-height:1.1;letter-spacing:-0.02em}
+.lead{font-size:clamp(1rem,2.5vw,1.3125rem);font-weight:400;line-height:1.19}
+.body-sm{font-size:14px;font-weight:400;line-height:1.43;letter-spacing:-0.008em}
+.eyebrow{font-size:13px;font-weight:500;line-height:1;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.fine-print{font-size:12px;font-weight:400;line-height:1.33}
+.btn-primary{background:var(--accent);color:#000;font-size:17px;font-weight:400;line-height:1;border-radius:9999px;padding:11px 22px;border:none;cursor:pointer;transition:filter .12s ease,transform .12s ease;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn-secondary-pill{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:9999px;padding:11px 22px;font-size:17px;cursor:pointer;transition:background .12s ease,color .12s ease;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.btn-secondary-pill:hover{background:var(--accent-muted);color:var(--accent-hover)}
+button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
+.card{background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:24px}
+.card:hover{background:var(--surface-2);border-color:var(--hairline-strong);box-shadow:0 0 30px var(--accent-glow);transition:transform .4s cubic-bezier(.16,1,.3,1),box-shadow .4s cubic-bezier(.16,1,.3,1),background .2s ease}
+.tile-dark{background:var(--canvas);padding:60px 20px}
+.tile-parchment{background:var(--canvas-parchment);padding:60px 20px}
+@media(min-width:640px){.tile-dark,.tile-parchment{padding:80px 24px}}
+.nav-frosted{position:fixed;top:0;left:0;right:0;z-index:50;height:48px;display:flex;align-items:center;background:rgba(5,5,8,0.8);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.05)}
+.nav-link{color:var(--ink-muted);font-size:13px;font-weight:400;letter-spacing:-0.006em;text-decoration:none;transition:color .2s}
+.nav-link:hover{color:var(--ink)}
+.search-wrap{display:flex;align-items:center;background:var(--surface-1);border:1px solid var(--hairline);border-radius:9999px;padding:6px 6px 6px 20px;transition:border-color .2s}
+.search-wrap:focus-within{border-color:var(--hairline-strong)}
+.si{background:transparent;border:none;color:var(--ink);font-size:17px;font-family:inherit;outline:none;flex:1;letter-spacing:-0.01em}
+.si::placeholder{color:var(--ink-subtle)}
+.sb{background:var(--accent);color:#000;border:none;border-radius:9999px;padding:7px 20px;font-size:15px;font-weight:500;cursor:pointer;transition:filter .12s;flex-shrink:0}
+.sb:hover{filter:brightness(1.1)}.sb:disabled{opacity:.5;cursor:not-allowed}
+.fmt-table{width:100%;border-collapse:collapse}
+.fmt-table th{padding:8px 12px;font-size:12px;color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em;text-align:left;border-bottom:1px solid var(--hairline);font-weight:500}
+.fmt-table td{padding:10px 12px;font-size:15px;border-bottom:1px solid var(--hairline)}
+.fmt-table tr{cursor:pointer;transition:background .12s}
+.fmt-table tr:hover{background:var(--surface-2)}
+.fmt-table tr.selected{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.fmt-table input[type="radio"]{accent-color:var(--accent);width:16px;height:16px;margin:0}
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.f1,.f2,.f3,.f4{opacity:0;transform:translateY(24px);animation:fadeUp .8s cubic-bezier(.16,1,.3,1) forwards}
+.f1{animation-delay:.1s}.f2{animation-delay:.2s}.f3{animation-delay:.3s}.f4{animation-delay:.4s}
+@keyframes rv{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:16px!important}
+  .features-grid{grid-template-columns:1fr!important;gap:16px!important}
+  .howto-grid{grid-template-columns:1fr!important;gap:32px!important}
+  .footer-grid{grid-template-columns:1fr!important;gap:24px!important}
+  .tile-dark,.tile-parchment{padding:40px 16px!important}
+  .card{padding:16px!important}
+  .fmt-table td,.fmt-table th{padding:6px 8px!important;font-size:13px!important}
+  .fmt-table input[type="radio"]{width:14px!important;height:14px!important}
+  section[style*="padding:56px"]{padding:40px 0!important}
+  footer{padding:40px 0!important}
+  .search-wrap{margin:0 8px}
+}
+
+</style>
+</head>
+<body>
+<nav class="nav-frosted">
+<div style="max-width:1200px;width:100%;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+<a href="/" style="color:var(--accent);font-size:14px;font-weight:600;letter-spacing:-0.006em;text-decoration:none;display:flex;align-items:center;gap:8px;flex-shrink:0">
+<img src="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app/logo-JalaJO-v2.png" alt="JalaJO" style="width:auto;height:28px">
+<span style="color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-0.006em"><span style="color:var(--accent)">Jala</span>Downloader</span>
+</a>
+<div class="hidden md:flex items-center" style="gap:20px">
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<a class="btn-primary" href="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app" style="font-size:14px;padding:6px 16px;min-height:36px;text-decoration:none">JalaJO</a>
+</div>
+</div>
+</nav>
+
+<section class="tile-dark" style="padding-top:96px;text-align:center;display:flex;flex-direction:column;align-items:center">
+<div style="max-width:980px;width:100%;padding:0 24px">
+<p class="eyebrow mb-4 f1">Video & Audio Downloader</p>
+<h1 class="display-hero mb-6 f2" style="color:var(--ink)">Download from any<br class="hidden sm:inline"> <span style="color:var(--accent)">video platform</span>.</h1>
+<p class="lead f3" style="color:var(--ink-muted);max-width:600px;margin:0 auto 36px">Paste a link, choose a format, download. Free, unlimited, no registration.</p>
+<div class="f4" style="max-width:600px;margin:0 auto">
+<div class="search-wrap">
+<input class="si" id="url" type="text" placeholder="Paste YouTube link here..." autocomplete="off">
+<button class="sb" id="btnFetch" onclick="fetchInfo()">Search</button>
+</div>
+<div style="margin-top:12px">
+<details style="cursor:pointer;color:var(--ink-muted);font-size:13px">
+<summary style="list-style:none;display:flex;align-items:center;justify-content:center;gap:4px">
+🔒 Instagram Private
+</summary>
+<div style="display:flex;gap:8px;margin-top:8px">
+<input class="si" id="igUser" type="text" placeholder="IG username" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none">
+<input class="si" id="igPass" type="password" placeholder="Password" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none">
+</div>
+<p style="color:var(--ink-subtle);font-size:11px;margin:6px 0 0;text-align:center">Opsional. Hanya dipakai untuk download ini, tidak disimpan.</p>
+</details>
+</div>
+</div>
+</div>
+</section>
+
+<div id="resultsWrap" style="display:none;max-width:740px;margin:-24px auto 0;padding:0 24px 32px;position:relative;z-index:10">
+<div class="card">
+<div style="display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap">
+<img id="thumbImg" src="" alt="" style="width:120px;border-radius:12px;flex-shrink:0;display:none">
+<div style="flex:1;min-width:200px"><h2 style="font-size:19px;font-weight:600;margin:0 0 4px;color:var(--ink)" id="videoTitle"></h2><p style="font-size:14px;color:var(--ink-muted);margin:0" id="videoMeta"></p></div>
+</div>
+<div class="fine-print" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Video</div>
+<table class="fmt-table" style="margin-bottom:16px"><tbody id="fmtTable"></tbody></table>
+<div id="audioSection" style="display:none"><div class="fine-print" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Audio</div><table class="fmt-table" style="margin-bottom:24px"><tbody id="audioTable"></tbody></table></div>
+<div style="text-align:center"><button class="btn-primary" id="btnDownload" onclick="startDownload()" style="display:none;padding:11px 32px">Download</button></div>
+</div>
+</div>
+
+<div style="max-width:740px;margin:0 auto;padding:0 24px"><div id="loading" style="display:none;text-align:center;padding:24px">
+  <div style="display:inline-block;text-align:left;max-width:400px;margin:0 auto">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;color:var(--ink-muted);font-size:14px">
+      <div id="ld1" style="width:10px;height:10px;border-radius:50%;background:var(--hairline-strong);animation:pulse 1.2s infinite"></div>
+      <span id="ls1">Mengambil info video...</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;color:var(--ink-subtle);font-size:14px">
+      <div id="ld2" style="width:10px;height:10px;border-radius:50%;background:var(--surface-2)"></div>
+      <span id="ls2">Memproses format</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;color:var(--ink-subtle);font-size:14px">
+      <div id="ld3" style="width:10px;height:10px;border-radius:50%;background:var(--surface-2)"></div>
+      <span id="ls3">Menyiapkan hasil</span>
+    </div>
+  </div>
+</div>
+<div id="slowInfo" style="display:none;max-width:500px;margin:12px auto 0;padding:0 24px;text-align:center;color:var(--ink-subtle);font-size:12px;animation:fadeUp .5s ease-out">
+  YouTube butuh waktu ~20 detik karena server di HP. Sabar ya 😄
+</div></div>
+<div style="max-width:740px;margin:0 auto;padding:0 24px 32px"><div id="resultBox" style="display:none;background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:8px;color:var(--accent)">&#10003;</div><h3 style="font-size:20px;font-weight:600;margin:0 0 4px;color:var(--ink)">Ready for download</h3><p id="resultFileName" style="color:var(--ink-muted);margin:0 0 16px;font-size:14px"></p><a class="btn-primary" id="downloadLink" href="#">Download File</a></div></div>
+<div style="max-width:740px;margin:0 auto;padding:0 24px 32px"><div id="errorBox" style="display:none;background:color-mix(in srgb,var(--error) 8%,transparent);border:1px solid color-mix(in srgb,var(--error) 20%,transparent);border-radius:12px;padding:16px;text-align:center;color:var(--error);font-size:15px"><p id="errorText" style="margin:0"></p></div></div>
+
+<section style="background:var(--surface-black);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);padding:56px 0;position:relative;overflow:hidden">
+<div style="position:absolute;top:50%;left:25%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none;filter:blur(40px)"></div>
+<div style="position:absolute;top:50%;left:75%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none;filter:blur(40px)"></div>
+<div style="max-width:980px;margin:0 auto;padding:0 24px;position:relative;z-index:1">
+<div class="stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center">
+<div><div style="font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1;letter-spacing:-0.03em;color:var(--ink);margin-bottom:8px">Unlimited</div><div style="font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">Downloads</div></div>
+<div><div style="font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1;letter-spacing:-0.03em;color:var(--ink);margin-bottom:8px">4K+</div><div style="font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">Max Quality</div></div>
+<div><div style="font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1;letter-spacing:-0.03em;color:var(--ink);margin-bottom:8px">100%</div><div style="font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">Free</div></div>
+<div><div style="font-size:clamp(2rem,4vw,3rem);font-weight:700;line-height:1;letter-spacing:-0.03em;color:var(--ink);margin-bottom:8px">Auto</div><div style="font-size:14px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)">File Cleanup</div></div>
+</div>
+</div>
+</section>
+
+<section class="tile-parchment">
+<div style="max-width:980px;margin:0 auto;padding:0 24px">
+<div class="howto-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
+<div>
+<p class="eyebrow mb-4">How It Works</p>
+<h2 class="display-lg mb-6" style="color:var(--ink)">Three steps to download.</h2>
+<p class="lead" style="color:var(--ink-muted);margin-bottom:32px">No accounts, no complex settings. Just paste and download.</p>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">1</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Copy a link</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Find the video you want and copy its URL.</p></div></div>
+<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">2</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Search above</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Paste the link and click Search. Available formats will appear.</p></div></div>
+<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">3</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Download</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Pick your resolution or audio format and download.</p></div></div>
+</div>
+</div>
+<div style="background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:32px;box-shadow:0 0 40px var(--accent-glow);min-height:300px;display:flex;align-items:center;justify-content:center">
+<div style="text-align:center;color:var(--ink-muted);font-size:15px">
+<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;opacity:.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><circle cx="8" cy="8" r="2"/><path d="m22 15-5-5-5 5"/><path d="m12 15 2.5-2.5L17 15"/><path d="M12 19v-7"/></svg>
+Supported platforms:<br>YouTube, TikTok, Instagram, Twitter, Facebook, and more.
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="tile-dark">
+<div style="max-width:980px;margin:0 auto;padding:0 24px;text-align:center">
+<p class="eyebrow mb-4">Features</p>
+<h2 class="display-lg mb-10" style="color:var(--ink)">Everything you need.</h2>
+<div class="features-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:left">
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Free & Unlimited</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Download as many videos as you need. No accounts, no limits, no paywalls.</p></div>
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Multiple Platforms</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Works with YouTube, TikTok, Instagram, and hundreds of other sites.</p></div>
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Auto Cleanup</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Files are removed from the server automatically after you download them.</p></div>
+</div>
+</div>
+</section>
+
+<section class="tile-parchment">
+<div style="max-width:740px;margin:0 auto;padding:0 24px;text-align:center">
+<p class="eyebrow mb-4">FAQ</p>
+<h2 class="display-lg mb-10" style="color:var(--ink)">Frequently asked questions.</h2>
+<div style="display:flex;flex-direction:column;gap:4px;text-align:left">
+<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Is there a download limit?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">No limits. Download as many files as you want, whenever you want.</div></details>
+<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Can I download 4K video?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">If the source supports 4K, the option will appear in the resolution list.</div></details>
+<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Are my downloads private?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">Files are automatically deleted after download. No logs are kept.</div></details>
+<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">What platforms are supported?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">YouTube, TikTok, Instagram, Twitter, Facebook, Vimeo, and hundreds more.</div></details>
+</div>
+</div>
+</section>
+
+<section class="tile-dark" style="border-top:1px solid var(--hairline);text-align:center">
+<div style="max-width:600px;margin:0 auto;padding:0 24px">
+<h2 class="display-lg mb-6" style="color:var(--ink)">Ready to download?</h2>
+<p class="lead" style="color:var(--ink-muted);margin-bottom:24px">Copy a link and paste it above to get started.</p>
+<a class="btn-primary" href="#" onclick="document.getElementById('url').focus();return false" style="font-size:17px;text-decoration:none">Try it now</a>
+</div>
+</section>
+
+<footer style="background:var(--surface-black);border-top:1px solid var(--hairline);padding:64px 0">
+<div style="max-width:1200px;margin:0 auto;padding:0 24px">
+<div class="footer-grid" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:48px">
+<div><div style="font-size:20px;font-weight:700;margin-bottom:16px"><span style="color:var(--accent)">Jala</span><span style="color:var(--ink)">Downloader</span></div><p style="color:var(--ink-muted);font-size:15px;margin:0;max-width:260px">A fast, free video downloader. Part of the JalaJO ecosystem.</p></div>
+<div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Download</div><a class="nav-link" href="#" style="display:block;margin-bottom:8px">MP4</a><a class="nav-link" href="#" style="display:block;margin-bottom:8px">MP3</a><a class="nav-link" href="#" style="display:block">4K</a></div>
+<div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Products</div><a class="nav-link" href="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app" style="display:block;margin-bottom:8px">JalaJO</a><a class="nav-link" href="#" style="display:block;margin-bottom:8px">Forum</a><a class="nav-link" href="#" style="display:block">AI</a></div>
+<div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Legal</div><a class="nav-link" href="/privacy" style="display:block;margin-bottom:8px">Privacy</a><a class="nav-link" href="/terms" style="display:block;margin-bottom:8px">Terms</a><a class="nav-link" href="/contact" style="display:block">Contact</a></div>
+</div>
+<div style="text-align:center;padding-top:24px;border-top:1px solid var(--hairline);color:var(--ink-subtle);font-size:13px">&copy; 2026 JalaDownloader. Part of the JalaJO ecosystem.</div>
+</div>
+</footer>
+
+<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}</style>
+<script>
+let pi=null,lt=null;
+function showLoading(){
+  document.getElementById('loading').style.display='block';
+  document.getElementById('slowInfo').style.display='none';
+  // Reset steps
+  ['ld1','ld2','ld3'].forEach(id=>document.getElementById(id).style.background='var(--surface-2)');
+  document.getElementById('ld1').style.background='var(--accent)';
+  // Advance steps every 8s
+  lt=0;
+  if(window.li)clearInterval(window.li);
+  window.li=setInterval(function(){
+    lt++;
+    if(lt==1){document.getElementById('ld2').style.background='var(--accent)';document.getElementById('ld1').style.animation='none';document.getElementById('ls2').style.color='var(--ink-muted)'}
+    if(lt==2){
+      document.getElementById('ld3').style.background='var(--accent)';document.getElementById('ls3').style.color='var(--ink-muted)';
+      document.getElementById('slowInfo').style.display='block';
+    }
+    if(lt>3){clearInterval(window.li)}
+  },8000);
+}
+function hideLoading(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('slowInfo').style.display='none';
+  if(window.li)clearInterval(window.li);
+}
+document.getElementById('url').addEventListener('keydown',e=>{if(e.key==='Enter')fetchInfo()});
+function sz(n){if(!n||n<=0)return'?';const u=['B','KB','MB','GB'];let i=0,s=n;while(s>=1024&&i<u.length-1){s/=1024;i++}return s.toFixed(i>0?1:0)+' '+u[i]}
+function du(s){if(!s)return'';const m=Math.floor(s/60),sc=Math.floor(s%60);return m+'m '+sc.toString().padStart(2,'0')+'s'}
+function hd(){['resultsWrap','resultBox','errorBox','loading'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none'});const d=document.getElementById('btnDownload');if(d)d.style.display='none';if(pi){clearInterval(pi);pi=null};hideLoading()}
+function se(m){hd();const e=document.getElementById('errorBox');if(e)e.style.display='block';const t=document.getElementById('errorText');if(t)t.textContent=m;const b=document.getElementById('btnFetch');b.disabled=false;b.textContent='Search'}
+async function fetchInfo(){
+const u=document.getElementById('url').value.trim();if(!u)return se('Paste a link first');hd();showLoading();const b=document.getElementById('btnFetch');b.disabled=true;b.textContent='Searching';
+try{var igUser = ''; var igPass = '';
+var iuEl = document.getElementById('igUser'); if(iuEl) igUser = iuEl.value;
+var ipEl = document.getElementById('igPass'); if(ipEl) igPass = ipEl.value;
+const r=await fetch('/info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,ig_user:igUser,ig_pass:igPass})});const d=await r.json();if(d.error)return se(d.error);
+b.disabled=false;b.textContent='Search';document.getElementById('videoTitle').textContent=d.title;document.getElementById('videoMeta').textContent=du(d.duration);
+const ti=document.getElementById('thumbImg');if(d.thumbnail){ti.src=d.thumbnail;ti.style.display='block'}else{ti.style.display='none'}
+document.getElementById('loading').style.display='none';document.getElementById('resultsWrap').style.display='block';
+const tb=document.getElementById('fmtTable');tb.innerHTML='';
+d.formats.forEach((f,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'"'+(i===0?' checked':'')+'></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){const rb=tr.querySelector('input');if(rb)rb.checked=true}document.querySelectorAll('#fmtTable tr').forEach(el=>el.classList.remove('selected'));tr.classList.add('selected')});tb.appendChild(tr);if(i===0)tr.classList.add('selected')});
+const at=document.getElementById('audioTable');at.innerHTML='';const as=document.getElementById('audioSection');
+if(d.audio.length){as.style.display='block';d.audio.forEach(f=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'"></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){const rb=tr.querySelector('input');if(rb)rb.checked=true}document.querySelectorAll('.fmt-table tr').forEach(el=>el.classList.remove('selected'));tr.classList.add('selected')});at.appendChild(tr)})}else{as.style.display='none'}
+document.getElementById('btnDownload').style.display='inline-flex'}catch(e){se('Could not connect to server')}}
+function startDownload(){const sel=document.querySelector('input[name="fmt"]:checked');if(!sel)return se('Select a format');hd();document.getElementById('loading').style.display='block';var iu='',ip='';var iuEl=document.getElementById('igUser');if(iuEl)iu=iuEl.value;var ipEl=document.getElementById('igPass');if(ipEl)ip=ipEl.value;var directUrl=sel.dataset.url||'';fetch('/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.getElementById('url').value.trim(),format_id:sel.value,type:sel.dataset.type||'video',direct_url:directUrl,ig_user:iu,ig_pass:ip})}).then(r=>r.json()).then(d=>{if(d.error)return se(d.error);pi=setInterval(()=>poll(d.job_id),2000)}).catch(()=>se('Download failed'))}
+function poll(j){fetch('/status/'+j).then(r=>r.json()).then(d=>{if(d.status==='done'){clearInterval(pi);document.getElementById('loading').style.display='none';document.getElementById('resultFileName').textContent=d.file||'';document.getElementById('downloadLink').href='/file/'+j;document.getElementById('resultBox').style.display='block'}else if(d.status==='error'){clearInterval(pi);se(d.error||'Failed')}})}
+const mql=window.matchMedia('(prefers-color-scheme:light)');if(mql.matches){document.documentElement.setAttribute('data-theme','light')}mql.addEventListener('change',e=>{document.documentElement.setAttribute('data-theme',e.matches?'light':'dark')});
+</script>
+</body>
+</html>

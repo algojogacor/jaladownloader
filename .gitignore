@@ -1,0 +1,23 @@
+# JalaDownloader - Web Video Downloader
+# Flask + yt-dlp app
+
+# Phone-specific / sensitive
+instagram_cookies.txt
+.ig_auth
+login_ig.py
+ig_minimal.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Downloads (user files)
+downloads/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
