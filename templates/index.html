@@ -32,12 +32,12 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 .nav-frosted{position:fixed;top:0;left:0;right:0;z-index:50;height:48px;display:flex;align-items:center;background:rgba(5,5,8,0.8);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.05)}
 .nav-link{color:var(--ink-muted);font-size:13px;font-weight:400;letter-spacing:-0.006em;text-decoration:none;transition:color .2s}
 .nav-link:hover{color:var(--ink)}
-.search-wrap{display:flex;align-items:center;background:var(--surface-1);border:1px solid var(--hairline);border-radius:9999px;padding:6px 6px 6px 20px;transition:border-color .2s}
-.search-wrap:focus-within{border-color:var(--hairline-strong)}
-.si{background:transparent;border:none;color:var(--ink);font-size:17px;font-family:inherit;outline:none;flex:1;letter-spacing:-0.01em}
-.si::placeholder{color:var(--ink-subtle)}
-.sb{background:var(--accent);color:#000;border:none;border-radius:9999px;padding:7px 20px;font-size:15px;font-weight:500;cursor:pointer;transition:filter .12s;flex-shrink:0}
-.sb:hover{filter:brightness(1.1)}.sb:disabled{opacity:.5;cursor:not-allowed}
+
+.search-card{max-width:600px;margin:0 auto;padding:20px;text-align:left;background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px}
+.textarea-wrap{position:relative;margin-bottom:12px}
+.si{width:100%;min-height:80px;padding:12px 16px;background:var(--canvas);border:1px solid var(--hairline);border-radius:12px;color:var(--ink);font-family:inherit;font-size:16px;outline:none;resize:none;transition:border-color .2s}
+.si:focus{border-color:var(--accent)}
+
 .fmt-table{width:100%;border-collapse:collapse}
 .fmt-table th{padding:8px 12px;font-size:12px;color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em;text-align:left;border-bottom:1px solid var(--hairline);font-weight:500}
 .fmt-table td{padding:10px 12px;font-size:15px;border-bottom:1px solid var(--hairline)}
@@ -45,10 +45,10 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 .fmt-table tr:hover{background:var(--surface-2)}
 .fmt-table tr.selected{background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .fmt-table input[type="radio"]{accent-color:var(--accent);width:16px;height:16px;margin:0}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 .f1,.f2,.f3,.f4{opacity:0;transform:translateY(24px);animation:fadeUp .8s cubic-bezier(.16,1,.3,1) forwards}
 .f1{animation-delay:.1s}.f2{animation-delay:.2s}.f3{animation-delay:.3s}.f4{animation-delay:.4s}
-@keyframes rv{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
 
 @media(max-width:768px){
   .stats-grid{grid-template-columns:repeat(2,1fr)!important;gap:16px!important}
@@ -61,9 +61,7 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
   .fmt-table input[type="radio"]{width:14px!important;height:14px!important}
   section[style*="padding:56px"]{padding:40px 0!important}
   footer{padding:40px 0!important}
-  .search-wrap{margin:0 8px}
 }
-
 </style>
 </head>
 <body>
@@ -73,8 +71,6 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <img src="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app/logo-JalaJO-v2.png" alt="JalaJO" style="width:auto;height:28px">
 <span style="color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-0.006em"><span style="color:var(--accent)">Jala</span>Downloader</span>
 </a>
-<div class="hidden md:flex items-center" style="gap:20px">
-</div>
 <div style="display:flex;align-items:center;gap:12px">
 <a class="btn-primary" href="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app" style="font-size:14px;padding:6px 16px;min-height:36px;text-decoration:none">JalaJO</a>
 </div>
@@ -85,43 +81,80 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <div style="max-width:980px;width:100%;padding:0 24px">
 <p class="eyebrow mb-4 f1">Video & Audio Downloader</p>
 <h1 class="display-hero mb-6 f2" style="color:var(--ink)">Download from any<br class="hidden sm:inline"> <span style="color:var(--accent)">video platform</span>.</h1>
-<p class="lead f3" style="color:var(--ink-muted);max-width:600px;margin:0 auto 36px">Paste a link, choose a format, download. Free, unlimited, no registration.</p>
+<p class="lead f3" style="color:var(--ink-muted);max-width:600px;margin:0 auto 36px">Paste links, choose formats, download. Free, unlimited, support batch mode.</p>
 <div class="f4" style="max-width:600px;margin:0 auto">
-<div class="search-wrap">
-<input class="si" id="url" type="text" placeholder="Paste YouTube link here..." autocomplete="off">
-<button class="sb" id="btnFetch" onclick="fetchInfo()">Search</button>
-</div>
-<div style="margin-top:12px">
-<details style="cursor:pointer;color:var(--ink-muted);font-size:13px">
-<summary style="list-style:none;display:flex;align-items:center;justify-content:center;gap:4px">
-🔒 Instagram Private
-</summary>
-<div style="display:flex;gap:8px;margin-top:8px">
-<input class="si" id="igUser" type="text" placeholder="IG username" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none">
-<input class="si" id="igPass" type="password" placeholder="Password" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none">
-</div>
-<p style="color:var(--ink-subtle);font-size:11px;margin:6px 0 0;text-align:center">Opsional. Hanya dipakai untuk download ini, tidak disimpan.</p>
-</details>
-</div>
+  <div class="search-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:14px; color:var(--ink-muted); font-weight:500;">Paste links below (one per line, max 5)</span>
+          <span id="platformBadge" style="display:none; font-size:12px; font-weight:600; text-transform:uppercase; padding:2px 8px; border-radius:4px; background:var(--accent-muted); color:var(--accent-hover);"></span>
+      </div>
+      <div class="textarea-wrap">
+          <textarea class="si" id="url" placeholder="Paste link(s) here..." autocomplete="off"></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+          <button class="btn-primary" id="btnFetch" onclick="fetchInfo()">Search</button>
+          <button class="btn-secondary-pill" id="btnPaste" onclick="pasteFromClipboard()" style="padding:11px 16px; font-size:15px; border-radius:9999px;">📋 Paste</button>
+      </div>
+  </div>
+
+  <div style="margin-top:12px">
+    <details style="cursor:pointer;color:var(--ink-muted);font-size:13px">
+      <summary style="list-style:none;display:flex;align-items:center;justify-content:center;gap:4px">
+      🔒 Instagram Private
+      </summary>
+      <div style="display:flex;gap:8px;margin-top:8px">
+      <input class="si" id="igUser" type="text" placeholder="IG username" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none;min-height:auto;">
+      <input class="si" id="igPass" type="password" placeholder="Password" style="flex:1;padding:8px 12px;font-size:13px;border:1px solid var(--hairline);border-radius:8px;background:var(--surface-1);color:var(--ink);outline:none;min-height:auto;">
+      </div>
+      <p style="color:var(--ink-subtle);font-size:11px;margin:6px 0 0;text-align:center">Opsional. Hanya dipakai untuk download ini, tidak disimpan.</p>
+    </details>
+  </div>
 </div>
 </div>
 </section>
 
+<!-- Single URL results wrap -->
 <div id="resultsWrap" style="display:none;max-width:740px;margin:-24px auto 0;padding:0 24px 32px;position:relative;z-index:10">
 <div class="card">
 <div style="display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap">
-<img id="thumbImg" src="" alt="" style="width:120px;border-radius:12px;flex-shrink:0;display:none">
-<div style="flex:1;min-width:200px"><h2 style="font-size:19px;font-weight:600;margin:0 0 4px;color:var(--ink)" id="videoTitle"></h2><p style="font-size:14px;color:var(--ink-muted);margin:0" id="videoMeta"></p></div>
-</div>
-<div class="fine-print" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Video</div>
-<table class="fmt-table" style="margin-bottom:16px"><tbody id="fmtTable"></tbody></table>
-<div id="audioSection" style="display:none"><div class="fine-print" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Audio</div><table class="fmt-table" style="margin-bottom:24px"><tbody id="audioTable"></tbody></table></div>
-<div style="text-align:center"><button class="btn-primary" id="btnDownload" onclick="startDownload()" style="display:none;padding:11px 32px">Download</button></div>
+<img id="thumbImg" src="" alt="" style="width:120px;border-radius:12px;flex-shrink:0;display:none;object-fit:cover;">
+<div style="flex:1;min-width:200px">
+  <h2 style="font-size:19px;font-weight:600;margin:0 0 4px;color:var(--ink)" id="videoTitle"></h2>
+  <p style="font-size:14px;color:var(--ink-muted);margin:0" id="videoMeta"></p>
 </div>
 </div>
 
-<div style="max-width:740px;margin:0 auto;padding:0 24px"><div id="loading" style="display:none;text-align:center;padding:24px">
-  <div style="display:inline-block;text-align:left;max-width:400px;margin:0 auto">
+<!-- Download zip section for Instagram Carousel -->
+<div id="zipDownloadSection" style="display:none; text-align:center; margin-bottom:15px;">
+    <button class="btn-secondary-pill" id="btnDownloadZip" onclick="downloadInstagramZip()" style="width:100%; border-style:dashed;">📦 Download All as ZIP</button>
+</div>
+
+<div class="fine-print" id="videoHeader" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Video</div>
+<table class="fmt-table" id="fmtTable" style="margin-bottom:16px"><tbody id="fmtTableBody"></tbody></table>
+
+<div id="audioSection" style="display:none">
+  <div class="fine-print" style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--hairline);color:var(--ink-subtle);text-transform:uppercase;letter-spacing:.04em">Audio</div>
+  <table class="fmt-table" style="margin-bottom:24px"><tbody id="audioTable"></tbody></table>
+</div>
+
+<div style="text-align:center">
+  <button class="btn-primary" id="btnDownload" onclick="startDownload()" style="display:none;padding:11px 32px">Download</button>
+</div>
+</div>
+</div>
+
+<!-- Batch mode results wrap -->
+<div id="batchWrap" style="display:none; max-width:740px; margin:-24px auto 0; padding:0 24px 32px; position:relative; z-index:10">
+    <div class="card">
+        <h3 style="font-size:18px; font-weight:600; margin-bottom:16px; color:var(--ink);">Batch Download Queue</h3>
+        <div id="batchQueueList" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+</div>
+
+<!-- Loading / Progress area -->
+<div style="max-width:740px;margin:0 auto;padding:0 24px">
+<div id="loading" style="display:none;text-align:center;padding:24px">
+  <div style="display:inline-block;text-align:left;max-width:400px;width:100%;margin:0 auto">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;color:var(--ink-muted);font-size:14px">
       <div id="ld1" style="width:10px;height:10px;border-radius:50%;background:var(--hairline-strong);animation:pulse 1.2s infinite"></div>
       <span id="ls1">Mengambil info video...</span>
@@ -130,17 +163,57 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
       <div id="ld2" style="width:10px;height:10px;border-radius:50%;background:var(--surface-2)"></div>
       <span id="ls2">Memproses format</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;color:var(--ink-subtle);font-size:14px">
+    <div style="display:flex;align-items:center;gap:12px;color:var(--ink-subtle);font-size:14px;margin-bottom:16px">
       <div id="ld3" style="width:10px;height:10px;border-radius:50%;background:var(--surface-2)"></div>
       <span id="ls3">Menyiapkan hasil</span>
+    </div>
+    
+    <!-- Real-time Progress Bar -->
+    <div id="progressContainer" style="display:none;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; color:var(--ink-muted);">
+            <span id="progressPercent">0%</span>
+            <span id="progressMeta">Speed: -- | ETA: --</span>
+        </div>
+        <div style="background:var(--surface-2); border-radius:9999px; height:8px; overflow:hidden;">
+            <div id="progressBar" style="background:var(--accent); width:0%; height:100%; transition: width 0.2s ease;"></div>
+        </div>
     </div>
   </div>
 </div>
 <div id="slowInfo" style="display:none;max-width:500px;margin:12px auto 0;padding:0 24px;text-align:center;color:var(--ink-subtle);font-size:12px;animation:fadeUp .5s ease-out">
   YouTube butuh waktu ~20 detik karena server di HP. Sabar ya 😄
-</div></div>
-<div style="max-width:740px;margin:0 auto;padding:0 24px 32px"><div id="resultBox" style="display:none;background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:8px;color:var(--accent)">&#10003;</div><h3 style="font-size:20px;font-weight:600;margin:0 0 4px;color:var(--ink)">Ready for download</h3><p id="resultFileName" style="color:var(--ink-muted);margin:0 0 16px;font-size:14px"></p><a class="btn-primary" id="downloadLink" href="#">Download File</a></div></div>
-<div style="max-width:740px;margin:0 auto;padding:0 24px 32px"><div id="errorBox" style="display:none;background:color-mix(in srgb,var(--error) 8%,transparent);border:1px solid color-mix(in srgb,var(--error) 20%,transparent);border-radius:12px;padding:16px;text-align:center;color:var(--error);font-size:15px"><p id="errorText" style="margin:0"></p></div></div>
+</div>
+</div>
+
+<!-- Ready for download box -->
+<div style="max-width:740px;margin:0 auto;padding:0 24px 32px">
+<div id="resultBox" style="display:none;background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:40px;text-align:center">
+  <div style="font-size:32px;margin-bottom:8px;color:var(--accent)">&#10003;</div>
+  <h3 style="font-size:20px;font-weight:600;margin:0 0 4px;color:var(--ink)">Ready for download</h3>
+  <p id="resultFileName" style="color:var(--ink-muted);margin:0 0 16px;font-size:14px"></p>
+  <a class="btn-primary" id="downloadLink" href="#">Download File</a>
+</div>
+</div>
+
+<!-- Error box -->
+<div style="max-width:740px;margin:0 auto;padding:0 24px 32px">
+<div id="errorBox" style="display:none;background:color-mix(in srgb,var(--error) 8%,transparent);border:1px solid color-mix(in srgb,var(--error) 20%,transparent);border-radius:12px;padding:16px;text-align:center;color:var(--error);font-size:15px">
+  <p id="errorText" style="margin:0"></p>
+</div>
+</div>
+
+<!-- Collapsible history section -->
+<div style="max-width:740px; margin:0 auto 32px; padding:0 24px;">
+   <details class="card" style="padding:16px;" id="historyDetails">
+       <summary style="font-size:16px; font-weight:600; color:var(--ink); display:flex; justify-content:space-between; align-items:center; list-style:none; cursor:pointer;" onclick="loadHistory()">
+           <span>📜 Download History</span>
+           <span style="color:var(--ink-muted); font-size:20px; font-weight:300">+</span>
+       </summary>
+       <div id="historyList" style="margin-top:16px; max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+           <p style="color:var(--ink-subtle); text-align:center; font-size:14px;">No download history yet.</p>
+       </div>
+   </details>
+</div>
 
 <section style="background:var(--surface-black);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);padding:56px 0;position:relative;overflow:hidden">
 <div style="position:absolute;top:50%;left:25%;transform:translate(-50%,-50%);width:300px;height:300px;background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%);pointer-events:none;filter:blur(40px)"></div>
@@ -158,22 +231,22 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <section class="tile-parchment">
 <div style="max-width:980px;margin:0 auto;padding:0 24px">
 <div class="howto-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center">
-<div>
-<p class="eyebrow mb-4">How It Works</p>
-<h2 class="display-lg mb-6" style="color:var(--ink)">Three steps to download.</h2>
-<p class="lead" style="color:var(--ink-muted);margin-bottom:32px">No accounts, no complex settings. Just paste and download.</p>
-<div style="display:flex;flex-direction:column;gap:20px">
-<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">1</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Copy a link</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Find the video you want and copy its URL.</p></div></div>
-<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">2</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Search above</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Paste the link and click Search. Available formats will appear.</p></div></div>
-<div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">3</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Download</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Pick your resolution or audio format and download.</p></div></div>
-</div>
-</div>
-<div style="background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:32px;box-shadow:0 0 40px var(--accent-glow);min-height:300px;display:flex;align-items:center;justify-content:center">
-<div style="text-align:center;color:var(--ink-muted);font-size:15px">
-<svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;opacity:.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><circle cx="8" cy="8" r="2"/><path d="m22 15-5-5-5 5"/><path d="m12 15 2.5-2.5L17 15"/><path d="M12 19v-7"/></svg>
-Supported platforms:<br>YouTube, TikTok, Instagram, Twitter, Facebook, and more.
-</div>
-</div>
+  <div>
+    <p class="eyebrow mb-4">How It Works</p>
+    <h2 class="display-lg mb-6" style="color:var(--ink)">Three steps to download.</h2>
+    <p class="lead" style="color:var(--ink-muted);margin-bottom:32px">No accounts, no complex settings. Just paste and download.</p>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">1</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Copy link(s)</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Find the videos you want and copy their URLs.</p></div></div>
+      <div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">2</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Search above</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Paste links (one per line, up to 5) and click Search.</p></div></div>
+      <div style="display:flex;gap:16px;align-items:flex-start"><div style="width:40px;height:40px;border-radius:9999px;background:var(--accent-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;color:var(--accent-hover)">3</div><div><h3 style="font-size:17px;font-weight:600;color:var(--ink);margin-bottom:4px">Download</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Choose format options and download to your device.</p></div></div>
+    </div>
+  </div>
+  <div style="background:var(--surface-1);border:1px solid var(--hairline);border-radius:18px;padding:32px;box-shadow:0 0 40px var(--accent-glow);min-height:300px;display:flex;align-items:center;justify-content:center">
+    <div style="text-align:center;color:var(--ink-muted);font-size:15px">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;opacity:.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><circle cx="8" cy="8" r="2"/><path d="m22 15-5-5-5 5"/><path d="m12 15 2.5-2.5L17 15"/><path d="M12 19v-7"/></svg>
+      Supported platforms:<br>YouTube, TikTok, Instagram, Pinterest, Reddit, SoundCloud, Capcut, Bilibili, and more.
+    </div>
+  </div>
 </div>
 </div>
 </section>
@@ -183,31 +256,10 @@ Supported platforms:<br>YouTube, TikTok, Instagram, Twitter, Facebook, and more.
 <p class="eyebrow mb-4">Features</p>
 <h2 class="display-lg mb-10" style="color:var(--ink)">Everything you need.</h2>
 <div class="features-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;text-align:left">
-<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Free & Unlimited</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Download as many videos as you need. No accounts, no limits, no paywalls.</p></div>
-<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Multiple Platforms</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Works with YouTube, TikTok, Instagram, and hundreds of other sites.</p></div>
-<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Auto Cleanup</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Files are removed from the server automatically after you download them.</p></div>
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Batch Processing</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Paste up to 5 URLs. The queue will process them sequentially to avoid overloading.</p></div>
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">SQLite History</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Access your past downloads anytime via the local history section.</p></div>
+<div class="card"><h3 style="font-size:19px;font-weight:600;color:var(--ink);margin-bottom:8px">Instagram Carousels</h3><p style="font-size:15px;color:var(--ink-muted);margin:0">Easily bundle all sidecar photos and videos from Instagram posts into a single ZIP file.</p></div>
 </div>
-</div>
-</section>
-
-<section class="tile-parchment">
-<div style="max-width:740px;margin:0 auto;padding:0 24px;text-align:center">
-<p class="eyebrow mb-4">FAQ</p>
-<h2 class="display-lg mb-10" style="color:var(--ink)">Frequently asked questions.</h2>
-<div style="display:flex;flex-direction:column;gap:4px;text-align:left">
-<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Is there a download limit?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">No limits. Download as many files as you want, whenever you want.</div></details>
-<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Can I download 4K video?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">If the source supports 4K, the option will appear in the resolution list.</div></details>
-<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">Are my downloads private?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">Files are automatically deleted after download. No logs are kept.</div></details>
-<details class="card" style="padding:16px;cursor:pointer"><summary style="font-size:15px;font-weight:500;color:var(--ink);display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer">What platforms are supported?<span style="color:var(--ink-muted);font-size:20px;font-weight:300">+</span></summary><div style="color:var(--ink-muted);font-size:15px;padding-top:12px;margin-top:12px;border-top:1px solid var(--hairline)">YouTube, TikTok, Instagram, Twitter, Facebook, Vimeo, and hundreds more.</div></details>
-</div>
-</div>
-</section>
-
-<section class="tile-dark" style="border-top:1px solid var(--hairline);text-align:center">
-<div style="max-width:600px;margin:0 auto;padding:0 24px">
-<h2 class="display-lg mb-6" style="color:var(--ink)">Ready to download?</h2>
-<p class="lead" style="color:var(--ink-muted);margin-bottom:24px">Copy a link and paste it above to get started.</p>
-<a class="btn-primary" href="#" onclick="document.getElementById('url').focus();return false" style="font-size:17px;text-decoration:none">Try it now</a>
 </div>
 </section>
 
@@ -226,18 +278,92 @@ Supported platforms:<br>YouTube, TikTok, Instagram, Twitter, Facebook, and more.
 <style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}</style>
 <script>
 let pi=null,lt=null;
+let currentInfo=null;
+
+window.addEventListener('focus', checkClipboard);
+document.addEventListener('DOMContentLoaded', () => {
+    checkClipboard();
+});
+
+document.getElementById('url').addEventListener('input', () => {
+    const lines = document.getElementById('url').value.split('\n');
+    const u = lines[0].trim();
+    updatePlatformBadge(u);
+});
+
+function updatePlatformBadge(url) {
+    const badge = document.getElementById('platformBadge');
+    if (!url) {
+        badge.style.display = 'none';
+        return;
+    }
+    
+    let platform = 'unknown';
+    const url_lower = url.toLowerCase();
+    if (url_lower.includes('youtube.com') || url_lower.includes('youtu.be')) platform = 'youtube';
+    else if (url_lower.includes('tiktok.com')) platform = 'tiktok';
+    else if (url_lower.includes('instagram.com')) platform = 'instagram';
+    else if (url_lower.includes('pinterest.com') || url_lower.includes('pin.it')) platform = 'pinterest';
+    else if (url_lower.includes('reddit.com') || url_lower.includes('v.redd.it')) platform = 'reddit';
+    else if (url_lower.includes('soundcloud.com')) platform = 'soundcloud';
+    else if (url_lower.includes('capcut.com')) platform = 'capcut';
+    else if (url_lower.includes('bilibili.com') || url_lower.includes('b23.tv')) platform = 'bilibili';
+    else if (url_lower.includes('twitter.com') || url_lower.includes('x.com')) platform = 'twitter';
+    else if (url_lower.includes('facebook.com') || url_lower.includes('fb.watch')) platform = 'facebook';
+    
+    if (platform !== 'unknown') {
+        badge.textContent = platform;
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+async function checkClipboard() {
+    if (!navigator.clipboard || !navigator.clipboard.readText) return;
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim().match(/^https?:\/\/[^\s]+$/)) {
+            const urlInput = document.getElementById('url');
+            if (urlInput.value.trim() === '') {
+                urlInput.value = text.trim();
+                updatePlatformBadge(text.trim());
+                fetchInfo();
+            }
+        }
+    } catch (e) {
+        // Silent catch
+    }
+}
+
+function pasteFromClipboard() {
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+        alert("Clipboard access not allowed or unsupported. Please paste manually.");
+        return;
+    }
+    navigator.clipboard.readText().then(text => {
+        if (text) {
+            document.getElementById('url').value = text.trim();
+            updatePlatformBadge(text.trim());
+        }
+    }).catch(err => {
+        alert("Failed to read clipboard. Please paste manually.");
+    });
+}
+
 function showLoading(){
   document.getElementById('loading').style.display='block';
   document.getElementById('slowInfo').style.display='none';
-  // Reset steps
+  document.getElementById('progressContainer').style.display='none';
+  
   ['ld1','ld2','ld3'].forEach(id=>document.getElementById(id).style.background='var(--surface-2)');
   document.getElementById('ld1').style.background='var(--accent)';
-  // Advance steps every 8s
+  
   lt=0;
   if(window.li)clearInterval(window.li);
   window.li=setInterval(function(){
     lt++;
-    if(lt==1){document.getElementById('ld2').style.background='var(--accent)';document.getElementById('ld1').style.animation='none';document.getElementById('ls2').style.color='var(--ink-muted)'}
+    if(lt==1){document.getElementById('ld2').style.background='var(--accent)';document.getElementById('ls2').style.color='var(--ink-muted)'}
     if(lt==2){
       document.getElementById('ld3').style.background='var(--accent)';document.getElementById('ls3').style.color='var(--ink-muted)';
       document.getElementById('slowInfo').style.display='block';
@@ -245,33 +371,433 @@ function showLoading(){
     if(lt>3){clearInterval(window.li)}
   },8000);
 }
+
 function hideLoading(){
   document.getElementById('loading').style.display='none';
   document.getElementById('slowInfo').style.display='none';
   if(window.li)clearInterval(window.li);
 }
-document.getElementById('url').addEventListener('keydown',e=>{if(e.key==='Enter')fetchInfo()});
+
 function sz(n){if(!n||n<=0)return'?';const u=['B','KB','MB','GB'];let i=0,s=n;while(s>=1024&&i<u.length-1){s/=1024;i++}return s.toFixed(i>0?1:0)+' '+u[i]}
-function du(s){if(!s)return'';const m=Math.floor(s/60),sc=Math.floor(s%60);return m+'m '+sc.toString().padStart(2,'0')+'s'}
-function hd(){['resultsWrap','resultBox','errorBox','loading'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.display='none'});const d=document.getElementById('btnDownload');if(d)d.style.display='none';if(pi){clearInterval(pi);pi=null};hideLoading()}
-function se(m){hd();const e=document.getElementById('errorBox');if(e)e.style.display='block';const t=document.getElementById('errorText');if(t)t.textContent=m;const b=document.getElementById('btnFetch');b.disabled=false;b.textContent='Search'}
+function du(s){if(!s || s === 0 || s === '0')return '';const m=Math.floor(s/60),sc=Math.floor(s%60);return m+'m '+sc.toString().padStart(2,'0')+'s'}
+
+function hd(){
+  ['resultsWrap','batchWrap','resultBox','errorBox','loading'].forEach(i=>{
+    const e=document.getElementById(i);
+    if(e)e.style.display='none';
+  });
+  const d=document.getElementById('btnDownload');
+  if(d)d.style.display='none';
+  if(pi){clearInterval(pi);pi=null};
+  hideLoading();
+}
+
+function se(m){
+  hd();
+  const e=document.getElementById('errorBox');
+  if(e)e.style.display='block';
+  const t=document.getElementById('errorText');
+  if(t)t.textContent=m;
+  const b=document.getElementById('btnFetch');
+  b.disabled=false;
+  b.textContent='Search';
+}
+
 async function fetchInfo(){
-const u=document.getElementById('url').value.trim();if(!u)return se('Paste a link first');hd();showLoading();const b=document.getElementById('btnFetch');b.disabled=true;b.textContent='Searching';
-try{var igUser = ''; var igPass = '';
-var iuEl = document.getElementById('igUser'); if(iuEl) igUser = iuEl.value;
-var ipEl = document.getElementById('igPass'); if(ipEl) igPass = ipEl.value;
-const r=await fetch('/info',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u,ig_user:igUser,ig_pass:igPass})});const d=await r.json();if(d.error)return se(d.error);
-b.disabled=false;b.textContent='Search';document.getElementById('videoTitle').textContent=d.title;document.getElementById('videoMeta').textContent=du(d.duration);
-const ti=document.getElementById('thumbImg');if(d.thumbnail){ti.src=d.thumbnail;ti.style.display='block'}else{ti.style.display='none'}
-document.getElementById('loading').style.display='none';document.getElementById('resultsWrap').style.display='block';
-const tb=document.getElementById('fmtTable');tb.innerHTML='';
-d.formats.forEach((f,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'"'+(i===0?' checked':'')+'></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){const rb=tr.querySelector('input');if(rb)rb.checked=true}document.querySelectorAll('#fmtTable tr').forEach(el=>el.classList.remove('selected'));tr.classList.add('selected')});tb.appendChild(tr);if(i===0)tr.classList.add('selected')});
-const at=document.getElementById('audioTable');at.innerHTML='';const as=document.getElementById('audioSection');
-if(d.audio.length){as.style.display='block';d.audio.forEach(f=>{const tr=document.createElement('tr');tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'"></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';tr.addEventListener('click',e=>{if(e.target.tagName!=='INPUT'){const rb=tr.querySelector('input');if(rb)rb.checked=true}document.querySelectorAll('.fmt-table tr').forEach(el=>el.classList.remove('selected'));tr.classList.add('selected')});at.appendChild(tr)})}else{as.style.display='none'}
-document.getElementById('btnDownload').style.display='inline-flex'}catch(e){se('Could not connect to server')}}
-function startDownload(){const sel=document.querySelector('input[name="fmt"]:checked');if(!sel)return se('Select a format');hd();document.getElementById('loading').style.display='block';var iu='',ip='';var iuEl=document.getElementById('igUser');if(iuEl)iu=iuEl.value;var ipEl=document.getElementById('igPass');if(ipEl)ip=ipEl.value;var directUrl=sel.dataset.url||'';fetch('/download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:document.getElementById('url').value.trim(),format_id:sel.value,type:sel.dataset.type||'video',direct_url:directUrl,ig_user:iu,ig_pass:ip})}).then(r=>r.json()).then(d=>{if(d.error)return se(d.error);pi=setInterval(()=>poll(d.job_id),2000)}).catch(()=>se('Download failed'))}
-function poll(j){fetch('/status/'+j).then(r=>r.json()).then(d=>{if(d.status==='done'){clearInterval(pi);document.getElementById('loading').style.display='none';document.getElementById('resultFileName').textContent=d.file||'';document.getElementById('downloadLink').href='/file/'+j;document.getElementById('resultBox').style.display='block'}else if(d.status==='error'){clearInterval(pi);se(d.error||'Failed')}})}
-const mql=window.matchMedia('(prefers-color-scheme:light)');if(mql.matches){document.documentElement.setAttribute('data-theme','light')}mql.addEventListener('change',e=>{document.documentElement.setAttribute('data-theme',e.matches?'light':'dark')});
+  const urls = document.getElementById('url').value.split('\n').map(u=>u.trim()).filter(Boolean);
+  if(urls.length === 0) return se('Paste a link first');
+  
+  if (urls.length > 5) {
+      return se('Maksimal 5 link untuk mode batch.');
+  }
+  
+  if (urls.length > 1) {
+      // Run batch queue processing
+      runBatchDownload(urls);
+      return;
+  }
+  
+  const u = urls[0];
+  hd();
+  showLoading();
+  const b=document.getElementById('btnFetch');
+  b.disabled=true;
+  b.textContent='Searching';
+  
+  try{
+    var igUser = ''; var igPass = '';
+    var iuEl = document.getElementById('igUser'); if(iuEl) igUser = iuEl.value;
+    var ipEl = document.getElementById('igPass'); if(ipEl) igPass = ipEl.value;
+    const r=await fetch('/info',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url:u,ig_user:igUser,ig_pass:igPass})
+    });
+    const d=await r.json();
+    if(d.error)return se(d.error);
+    
+    currentInfo = d;
+    b.disabled=false;
+    b.textContent='Search';
+    
+    document.getElementById('videoTitle').textContent=d.title;
+    
+    let durationText = du(d.duration);
+    if (d.platform && d.platform !== 'unknown') {
+        document.getElementById('videoMeta').innerHTML=`<span style="font-weight:600; color:var(--accent); text-transform:uppercase;">${d.platform}</span> &bull; ${durationText}`;
+    } else {
+        document.getElementById('videoMeta').textContent=durationText;
+    }
+    
+    const ti=document.getElementById('thumbImg');
+    if(d.thumbnail){
+      ti.src=d.thumbnail;
+      ti.style.display='block';
+    }else{
+      ti.style.display='none';
+    }
+    
+    // Hide loading
+    document.getElementById('loading').style.display='none';
+    document.getElementById('resultsWrap').style.display='block';
+    
+    // If Instagram carousel sidecar nodes exist (at least 2 photo/video items)
+    const isCarousel = d.platform === 'instagram' && d.formats.filter(f=>f.id.startsWith('ig_')).length > 1;
+    if (isCarousel) {
+        document.getElementById('zipDownloadSection').style.display = 'block';
+    } else {
+        document.getElementById('zipDownloadSection').style.display = 'none';
+    }
+    
+    // Show formats
+    const tb=document.getElementById('fmtTableBody');
+    tb.innerHTML='';
+    
+    if (d.audio_only) {
+        document.getElementById('videoHeader').style.display = 'none';
+        document.getElementById('fmtTable').style.display = 'none';
+    } else {
+        document.getElementById('videoHeader').style.display = 'block';
+        document.getElementById('fmtTable').style.display = 'table';
+        
+        d.formats.forEach((f,i)=>{
+            const tr=document.createElement('tr');
+            tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'" data-url="'+(f.direct_url||'')+'"'+(i===0?' checked':'')+'></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';
+            tr.addEventListener('click',e=>{
+                if(e.target.tagName!=='INPUT'){
+                    const rb=tr.querySelector('input');
+                    if(rb)rb.checked=true;
+                }
+                document.querySelectorAll('#fmtTableBody tr').forEach(el=>el.classList.remove('selected'));
+                tr.classList.add('selected');
+            });
+            tb.appendChild(tr);
+            if(i===0)tr.classList.add('selected');
+        });
+    }
+    
+    // Show audio formats
+    const at=document.getElementById('audioTable');
+    at.innerHTML='';
+    const as=document.getElementById('audioSection');
+    
+    if(d.audio.length){
+      as.style.display='block';
+      d.audio.forEach(f=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td><input type="radio" name="fmt" value="'+f.id+'" data-type="'+f.type+'" data-size="'+(f.size||0)+'" data-url="'+(f.direct_url||'')+'"></td><td><span style="color:var(--ink);font-weight:500">'+f.label+'</span> <span style="color:var(--ink-subtle);font-size:13px">'+f.ext+'</span></td><td style="text-align:right;color:var(--ink-muted)">'+(f.size>0?sz(f.size):'?')+'</td>';
+        tr.addEventListener('click',e=>{
+          if(e.target.tagName!=='INPUT'){
+            const rb=tr.querySelector('input');
+            if(rb)rb.checked=true;
+          }
+          document.querySelectorAll('.fmt-table tr').forEach(el=>el.classList.remove('selected'));
+          tr.classList.add('selected');
+        });
+        at.appendChild(tr);
+      });
+    }else{
+      as.style.display='none';
+    }
+    
+    document.getElementById('btnDownload').style.display='inline-flex';
+  }catch(e){
+    se('Could not connect to server');
+  }
+}
+
+function startDownload(){
+  const sel=document.querySelector('input[name="fmt"]:checked');
+  if(!sel)return se('Select a format');
+  hd();
+  document.getElementById('loading').style.display='block';
+  document.getElementById('progressContainer').style.display='block';
+  document.getElementById('progressPercent').textContent = '0%';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressMeta').textContent = 'Speed: -- | ETA: --';
+  
+  var iu='',ip='';
+  var iuEl=document.getElementById('igUser');if(iuEl)iu=iuEl.value;
+  var ipEl=document.getElementById('igPass');if(ipEl)ip=ipEl.value;
+  var directUrl=sel.dataset.url||'';
+  
+  fetch('/download',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+          url:document.getElementById('url').value.trim().split('\n')[0],
+          format_id:sel.value,
+          type:sel.dataset.type||'video',
+          direct_url:directUrl,
+          ig_user:iu,
+          ig_pass:ip,
+          title: currentInfo ? currentInfo.title : 'Unknown',
+          platform: currentInfo ? currentInfo.platform : 'unknown'
+      })
+  }).then(r=>r.json()).then(d=>{
+      if(d.error)return se(d.error);
+      pi=pi=setInterval(()=>poll(d.job_id),1500);
+  }).catch(()=>se('Download failed'));
+}
+
+function downloadInstagramZip() {
+    if (!currentInfo) return;
+    hd();
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('progressContainer').style.display = 'block';
+    document.getElementById('progressPercent').textContent = '0%';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('progressMeta').textContent = 'Downloading all nodes...';
+    
+    const items = currentInfo.formats.map(f => ({
+        direct_url: f.direct_url,
+        ext: f.ext
+    }));
+    
+    fetch('/download', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            url: document.getElementById('url').value.trim().split('\n')[0],
+            type: 'zip',
+            title: currentInfo.title,
+            platform: 'instagram',
+            items: items
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.error) return se(d.error);
+        pi = setInterval(() => poll(d.job_id), 1500);
+    })
+    .catch(() => se('ZIP download failed'));
+}
+
+function poll(j){
+  fetch('/status/'+j).then(r=>r.json()).then(d=>{
+    if(d.status==='processing'){
+        const p = d.progress || 0;
+        document.getElementById('progressPercent').textContent = p + '%';
+        document.getElementById('progressBar').style.width = p + '%';
+        document.getElementById('progressMeta').textContent = `Speed: ${d.speed || '--'} | ETA: ${d.eta || '--'}`;
+    }
+    else if(d.status==='done'){
+        clearInterval(pi);
+        document.getElementById('loading').style.display='none';
+        document.getElementById('resultFileName').textContent=d.file||'';
+        document.getElementById('downloadLink').href='/file/'+j;
+        document.getElementById('resultBox').style.display='block';
+        loadHistory();
+    }else if(d.status==='error'){
+        clearInterval(pi);
+        se(d.error||'Failed');
+    }
+  });
+}
+
+// BATCH MODE QUEUE HANDLER
+async function runBatchDownload(urls) {
+    hd();
+    document.getElementById('batchWrap').style.display = 'block';
+    const queueList = document.getElementById('batchQueueList');
+    queueList.innerHTML = '';
+    
+    const queue = urls.map((url, idx) => ({
+        url: url,
+        id: idx,
+        status: 'waiting',
+        title: url,
+        platform: 'unknown',
+        job_id: null,
+        file: null
+    }));
+    
+    // Render list
+    queue.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.id = `queue-item-${item.id}`;
+        itemDiv.className = 'card';
+        itemDiv.style.padding = '12px';
+        itemDiv.style.background = 'var(--surface-2)';
+        itemDiv.style.display = 'flex';
+        itemDiv.style.flexDirection = 'column';
+        itemDiv.style.gap = '8px';
+        
+        itemDiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="batch-title" style="font-weight:500; font-size:15px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:70%; color:var(--ink);">${item.url}</span>
+                <span class="batch-badge" style="font-size:12px; padding:2px 6px; border-radius:4px; font-weight:600; display:none; background:var(--accent-muted); color:var(--accent-hover);"></span>
+            </div>
+            <div style="font-size:13px; color:var(--ink-subtle); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.url}</div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+                <span class="batch-status" style="font-size:13px; font-weight:500; color:var(--ink-muted);">⏳ Waiting</span>
+                <div class="batch-actions" style="display:none;">
+                    <a class="btn-primary" style="font-size:13px; padding:4px 12px; text-decoration:none;" href="#">Download File</a>
+                </div>
+            </div>
+            <!-- Mini progress bar -->
+            <div class="batch-progress-container" style="display:none; background:var(--surface-3); height:4px; border-radius:9999px; overflow:hidden; margin-top:4px;">
+                <div class="batch-progress-bar" style="background:var(--accent); width:0%; height:100%;"></div>
+            </div>
+        `;
+        queueList.appendChild(itemDiv);
+    });
+    
+    // Process queue sequentially
+    for (let i = 0; i < queue.length; i++) {
+        const item = queue[i];
+        const el = document.getElementById(`queue-item-${item.id}`);
+        const statusEl = el.querySelector('.batch-status');
+        const badgeEl = el.querySelector('.batch-badge');
+        const titleEl = el.querySelector('.batch-title');
+        const progressContainer = el.querySelector('.batch-progress-container');
+        const progressBar = el.querySelector('.batch-progress-bar');
+        
+        statusEl.textContent = '🔄 Fetching info...';
+        statusEl.style.color = 'var(--accent-hover)';
+        
+        try {
+            // Get Info
+            var igUser = ''; var igPass = '';
+            var iuEl = document.getElementById('igUser'); if(iuEl) igUser = iuEl.value;
+            var ipEl = document.getElementById('igPass'); if(ipEl) igPass = ipEl.value;
+            
+            const r = await fetch('/info', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: item.url, ig_user: igUser, ig_pass: igPass})
+            });
+            const d = await r.json();
+            if (d.error) {
+                statusEl.textContent = `❌ Error: ${d.error}`;
+                statusEl.style.color = 'var(--error)';
+                continue;
+            }
+            
+            item.title = d.title;
+            titleEl.textContent = d.title;
+            
+            if (d.platform && d.platform !== 'unknown') {
+                badgeEl.textContent = d.platform;
+                badgeEl.style.display = 'inline-block';
+            }
+            
+            // Choose format (best format or direct_url if Instagram/image fallback)
+            const selFormat = d.formats[0]; // best is always first
+            const directUrl = selFormat ? (selFormat.direct_url || '') : '';
+            const fmtId = selFormat ? selFormat.id : 'best';
+            
+            statusEl.textContent = '🔄 Preparing download...';
+            
+            // Call download
+            const d_res = await fetch('/download', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    url: item.url,
+                    format_id: fmtId,
+                    type: selFormat ? selFormat.type : 'video',
+                    direct_url: directUrl,
+                    ig_user: igUser,
+                    ig_pass: igPass,
+                    title: d.title,
+                    platform: d.platform || 'unknown'
+                })
+            });
+            const dlData = await d_res.json();
+            if (dlData.error) {
+                statusEl.textContent = `❌ Error: ${dlData.error}`;
+                statusEl.style.color = 'var(--error)';
+                continue;
+            }
+            
+            progressContainer.style.display = 'block';
+            
+            // Poll status
+            let done = false;
+            while (!done) {
+                await new Promise(res => setTimeout(res, 1500));
+                const st_res = await fetch('/status/' + dlData.job_id);
+                const st = await st_res.json();
+                
+                if (st.status === 'processing') {
+                    const p = st.progress || 0;
+                    statusEl.textContent = `🔄 Downloading... (${p}% - ${st.speed || '--'})`;
+                    progressBar.style.width = p + '%';
+                } else if (st.status === 'done') {
+                    statusEl.textContent = '✅ Finished';
+                    statusEl.style.color = 'var(--accent)';
+                    progressBar.style.width = '100%';
+                    
+                    const actionsEl = el.querySelector('.batch-actions');
+                    const linkEl = actionsEl.querySelector('a');
+                    linkEl.href = '/file/' + dlData.job_id;
+                    actionsEl.style.display = 'block';
+                    done = true;
+                    loadHistory();
+                } else if (st.status === 'error') {
+                    statusEl.textContent = `❌ Error: ${st.error || 'Failed'}`;
+                    statusEl.style.color = 'var(--error)';
+                    done = true;
+                }
+            }
+        } catch (e) {
+            statusEl.textContent = `❌ Connection Error`;
+            statusEl.style.color = 'var(--error)';
+        }
+    }
+}
+
+async function loadHistory() {
+   const res = await fetch('/history');
+   const data = await res.json();
+   const container = document.getElementById('historyList');
+   container.innerHTML = '';
+   if (data.length === 0) {
+       container.innerHTML = '<p style="color:var(--ink-subtle); text-align:center; font-size:14px;">No download history yet.</p>';
+       return;
+   }
+   data.forEach(item => {
+       const div = document.createElement('div');
+       div.style.padding = '10px';
+       div.style.background = 'var(--surface-2)';
+       div.style.borderRadius = '8px';
+       div.style.display = 'flex';
+       div.style.justifyContent = 'space-between';
+       div.style.alignItems = 'center';
+       div.style.fontSize = '14px';
+       
+       const timeStr = new Date(item.downloaded_at * 1000).toLocaleString();
+       div.innerHTML = `
+           <div style="flex:1; overflow:hidden; margin-right:12px;">
+               <div style="font-weight:500; color:var(--ink); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${item.title}</div>
+               <div style="font-size:12px; color:var(--ink-subtle); margin-top:2px;">${item.platform.toUpperCase()} &bull; ${sz(item.filesize)} &bull; ${timeStr}</div>
+           </div>
+           <span style="font-size:12px; padding:2px 6px; border-radius:4px; background:var(--accent-glow); color:var(--accent-hover); font-weight:600;">Downloaded</span>
+       `;
+       container.appendChild(div);
+   });
+}
 </script>
 </body>
 </html>
