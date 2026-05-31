@@ -1,8 +1,11 @@
 import os
 import time
 import threading
+import logging
 from config import DOWNLOADS
 from cache import evict_stale_cache
+
+logger = logging.getLogger(__name__)
 
 jobs = {}
 
@@ -38,8 +41,8 @@ def cleaner():
                     elif os.path.isdir(fp) and f.startswith('temp_') and now - os.path.getmtime(fp) > 1800:
                         import shutil
                         shutil.rmtree(fp)
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Cleaner failed to remove file/dir {fp}: {e}", exc_info=True)
         # Purge stale job entries (>30 min), including done/error jobs
         stale_jobs = [k for k, v in jobs.items() if (v.get('_created', 0) and now - v['_created'] > 1800)]
         for k in stale_jobs:
@@ -47,8 +50,8 @@ def cleaner():
         # Evict expired cache entries
         try:
             evict_stale_cache()
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Cleaner failed to evict stale cache: {e}", exc_info=True)
 
 def get_queue_position(jid):
     queued = [k for k, v in jobs.items() if v.get('status') == 'queued']

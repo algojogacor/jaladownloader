@@ -90,6 +90,7 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
       </div>
       <div class="textarea-wrap">
           <textarea class="si" id="url" placeholder="Paste link(s) here..." autocomplete="off"></textarea>
+          <div style="font-size:11px; color:var(--ink-subtle); margin-top:4px; text-align:right;">↵ Enter to search</div>
       </div>
       <div style="display:flex; gap:8px;">
           <button class="btn-primary" id="btnFetch" onclick="fetchInfo()">Search</button>
@@ -125,7 +126,10 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <div style="display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap">
 <img id="thumbImg" src="" alt="" style="width:120px;border-radius:12px;flex-shrink:0;display:none;object-fit:cover;">
 <div style="flex:1;min-width:200px">
-  <h2 style="font-size:19px;font-weight:600;margin:0 0 4px;color:var(--ink)" id="videoTitle"></h2>
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px; flex-wrap:wrap;">
+    <h2 style="font-size:19px;font-weight:600;margin:0;color:var(--ink)" id="videoTitle"></h2>
+    <button id="btnShare" onclick="copyShareLink()" class="btn-secondary-pill" style="font-size:12px; padding:4px 10px; min-height:auto; display:inline-flex; align-items:center; gap:4px; border-radius:9999px;">🔗 Share</button>
+  </div>
   <p style="font-size:14px;color:var(--ink-muted);margin:0" id="videoMeta"></p>
 </div>
 </div>
@@ -205,6 +209,7 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <div style="max-width:740px;margin:0 auto;padding:0 24px 32px">
 <div id="errorBox" style="display:none;background:color-mix(in srgb,var(--error) 8%,transparent);border:1px solid color-mix(in srgb,var(--error) 20%,transparent);border-radius:12px;padding:16px;text-align:center;color:var(--error);font-size:15px">
   <p id="errorText" style="margin:0"></p>
+  <button class="btn-primary" id="btnRetry" onclick="startDownload()" style="display:none; margin-top:12px; font-size:14px; padding:6px 16px;">🔄 Coba Lagi</button>
 </div>
 </div>
 
@@ -275,7 +280,7 @@ button:active,a:active{transform:scale(0.95);transition:transform .1s ease-out}
 <div><div style="font-size:20px;font-weight:700;margin-bottom:16px"><span style="color:var(--accent)">Jala</span><span style="color:var(--ink)">Downloader</span></div><p style="color:var(--ink-muted);font-size:15px;margin:0;max-width:260px">A fast, free video downloader. Part of the JalaJO ecosystem.</p></div>
 <div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Download</div><a class="nav-link" href="#" style="display:block;margin-bottom:8px">MP4</a><a class="nav-link" href="#" style="display:block;margin-bottom:8px">MP3</a><a class="nav-link" href="#" style="display:block">4K</a></div>
 <div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Products</div><a class="nav-link" href="https://jalajo-ecosystem-801606067284.asia-southeast2.run.app" style="display:block;margin-bottom:8px">JalaJO</a><a class="nav-link" href="#" style="display:block;margin-bottom:8px">Forum</a><a class="nav-link" href="#" style="display:block">AI</a></div>
-<div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Legal</div><a class="nav-link" href="/privacy" style="display:block;margin-bottom:8px">Privacy</a><a class="nav-link" href="/terms" style="display:block;margin-bottom:8px">Terms</a><a class="nav-link" href="/contact" style="display:block">Contact</a></div>
+<div><div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px">Legal</div><a class="nav-link" href="/privacy" style="display:block;margin-bottom:8px">Privacy</a><a class="nav-link" href="/terms" style="display:block;margin-bottom:8px">Terms</a><a class="nav-link" href="/contact" style="display:block;margin-bottom:8px">Contact</a><a class="nav-link" href="/status-page" style="display:block">Status</a></div>
 </div>
 <div style="text-align:center;padding-top:24px;border-top:1px solid var(--hairline);color:var(--ink-subtle);font-size:13px">&copy; 2026 JalaDownloader. Part of the JalaJO ecosystem.</div>
 </div>
@@ -289,13 +294,34 @@ let currentContext = 'save';
 
 window.addEventListener('focus', checkClipboard);
 document.addEventListener('DOMContentLoaded', () => {
-    checkClipboard();
+    const params = new URLSearchParams(window.location.search);
+    const shareUrl = params.get('url');
+    if (shareUrl) {
+        const urlInput = document.getElementById('url');
+        urlInput.value = shareUrl.trim();
+        updatePlatformBadge(shareUrl.trim());
+        fetchInfo();
+    } else {
+        checkClipboard();
+    }
 });
 
 document.getElementById('url').addEventListener('input', () => {
     const lines = document.getElementById('url').value.split('\n');
     const u = lines[0].trim();
     updatePlatformBadge(u);
+});
+
+document.getElementById('url').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        fetchInfo();
+    }
+    if (e.key === 'Escape') {
+        document.getElementById('url').value = '';
+        updatePlatformBadge('');
+        hd();
+    }
 });
 
 function updatePlatformBadge(url) {
@@ -408,6 +434,36 @@ function se(m){
   const b=document.getElementById('btnFetch');
   b.disabled=false;
   b.textContent='Search';
+  
+  // Show retry button only if a format is selected
+  const sel=document.querySelector('input[name="fmt"]:checked');
+  const btnRetry=document.getElementById('btnRetry');
+  if(btnRetry) {
+      if(sel) {
+          btnRetry.style.display='inline-flex';
+      } else {
+          btnRetry.style.display='none';
+      }
+  }
+}
+
+function copyShareLink() {
+    const urlVal = document.getElementById('url').value.trim().split('\n')[0];
+    if (!urlVal) return;
+    
+    const shareUrl = new URL(window.location.origin + window.location.pathname);
+    shareUrl.searchParams.set('url', urlVal);
+    
+    navigator.clipboard.writeText(shareUrl.toString()).then(() => {
+        const btn = document.getElementById('btnShare');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '✅ Copied!';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+    }).catch(err => {
+        alert('Gagal menyalin link: ' + err);
+    });
 }
 
 async function fetchInfo(){

@@ -1,12 +1,15 @@
 import os
+import logging
 from urllib.parse import urlparse
 from config import IG_USER, IG_PASS
 
+logger = logging.getLogger(__name__)
 INSTA_LOADER = None
 try:
     import instaloader
     INSTA_LOADER = True
-except:
+except Exception as e:
+    logger.debug(f"Failed to import instaloader: {e}", exc_info=True)
     INSTA_LOADER = False
 
 def ig_shortcode(url):
@@ -31,12 +34,13 @@ def ig_via_instaloader(url, user='', pwd=''):
         if login_user and login_pwd:
             try:
                 L.load_session_from_file(login_user)
-            except:
+            except Exception as e:
+                logger.debug(f"Load session from file failed, attempting login: {e}", exc_info=True)
                 try:
                     L.login(login_user, login_pwd)
                     L.save_session_to_file()
-                except:
-                    pass
+                except Exception as ex:
+                    logger.debug(f"Login or save session failed: {ex}", exc_info=True)
         post = instaloader.Post.from_shortcode(L.context, sc)
         fmts = []
         if post.is_video:

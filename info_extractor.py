@@ -2,12 +2,30 @@ import os
 import json
 import subprocess
 import time
+import logging
 from config import YTDLP, COOKIES_FILE
 from cache import get_info_with_cache, set_info_cache
 from instagram import ig_via_instaloader
 from platforms import detect_platform, parse_image_page
 
+logger = logging.getLogger(__name__)
+
+def validate_url(url):
+    if not url:
+        raise ValueError('URL tidak valid')
+    if len(url) > 2048:
+        raise ValueError('URL tidak valid')
+    if not (url.startswith('http://') or url.startswith('https://')):
+        raise ValueError('URL tidak valid')
+    try:
+        domain = url.split('//', 1)[1].split('/', 1)[0].split('?', 1)[0].split('#', 1)[0]
+        if '.' not in domain or domain.startswith('.') or domain.endswith('.'):
+            raise ValueError('URL tidak valid')
+    except IndexError:
+        raise ValueError('URL tidak valid')
+
 def get_url_info(url, ig_user='', ig_pass=''):
+    validate_url(url)
     platform = detect_platform(url)
     
     # Check cache first

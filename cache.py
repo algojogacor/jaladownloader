@@ -1,6 +1,8 @@
 import time
+import logging
 from config import CACHE_TTL
 
+logger = logging.getLogger(__name__)
 CACHE = {}
 
 def get_info_with_cache(url):

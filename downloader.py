@@ -5,8 +5,11 @@ import subprocess
 import urllib.request
 import zipfile
 import shutil
+import logging
 from config import YTDLP, COOKIES_FILE, DOWNLOADS
 from jobs import jobs
+
+logger = logging.getLogger(__name__)
 
 def build_ytdlp_cmd(base, url):
     """Build yt-dlp command with optimizations for Termux"""
@@ -48,7 +51,8 @@ def dl_direct(jid, url, out):
             job['progress'] = 100
             try:
                 job['filesize'] = os.path.getsize(fp)
-            except:
+            except Exception as ex:
+                logger.debug(f"Failed to get filesize for {fp}: {ex}", exc_info=True)
                 job['filesize'] = 0
     except Exception as e:
         job = jobs.get(jid)
@@ -91,7 +95,8 @@ def dl_zip(jid, items, out):
             job['progress'] = 100
             try:
                 job['filesize'] = os.path.getsize(zip_path)
-            except:
+            except Exception as ex:
+                logger.debug(f"Failed to get filesize for {zip_path}: {ex}", exc_info=True)
                 job['filesize'] = 0
     except Exception as e:
         job = jobs.get(jid)
@@ -102,12 +107,25 @@ def dl_zip(jid, items, out):
         try:
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
-        except:
-            pass
+        except Exception as ex:
+            logger.debug(f"Failed to cleanup temp dir {temp_dir}: {ex}", exc_info=True)
 
 def run(jid, cmd, out):
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        import threading
+        stderr_lines = []
+        def read_stderr():
+            try:
+                for line in proc.stderr:
+                    stderr_lines.append(line)
+            except Exception as ex:
+                logger.debug(f"Error reading process stderr: {ex}", exc_info=True)
+                
+        t = threading.Thread(target=read_stderr, daemon=True)
+        t.start()
+        
         if proc.stdout:
             for line in proc.stdout:
                 m = re.search(r'(\d+\.?\d*)%', line)
@@ -119,12 +137,13 @@ def run(jid, cmd, out):
                 m = re.search(r'ETA\s+(\d+:\d+)', line)
                 if m:
                     jobs[jid]['eta'] = m.group(1)
+                    
         proc.wait(timeout=600)
+        t.join(timeout=5)
+        
         if proc.returncode:
             jobs[jid]['status'] = 'error'
-            err_msg = ''
-            if proc.stderr:
-                err_msg = proc.stderr.read()[:500]
+            err_msg = "".join(stderr_lines)[:500]
             jobs[jid]['error'] = err_msg or 'yt-dlp returned error code'
             return
         for f in os.listdir(DOWNLOADS):
@@ -136,7 +155,8 @@ def run(jid, cmd, out):
                 jobs[jid]['progress'] = 100
                 try:
                     jobs[jid]['filesize'] = os.path.getsize(fp)
-                except:
+                except Exception as ex:
+                    logger.debug(f"Failed to get filesize for {fp}: {ex}", exc_info=True)
                     jobs[jid]['filesize'] = 0
                 return
         jobs[jid]['status'] = 'error'

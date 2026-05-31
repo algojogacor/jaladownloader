@@ -7,12 +7,26 @@ instagram_cookies.txt
 login_ig.py
 ig_minimal.txt
 
-# Python
-__pycache__/
-*.pyc
+# Logs
+app.log
+*.log
+
+# Databases
+history.db
+*.db
 
 # Downloads (user files)
 downloads/
+
+# Python cache & compiler files
+__pycache__/
+*.pyc
+
+# yt-dlp updater state
+yt-dlp-updated.txt
+
+# Session files
+*.session
 
 # IDE
 .vscode/
@@ -21,6 +35,3 @@ downloads/
 # OS
 .DS_Store
 Thumbs.db
-
-# Databases
-*.db

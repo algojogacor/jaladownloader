@@ -3,6 +3,8 @@ import asyncio
 import threading
 import uuid
 import html
+import time
+import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
@@ -11,8 +13,18 @@ from download_queue import enqueue_job
 from jobs import get_job, get_queue_position, pop_job
 from history import add_entry
 
+logger = logging.getLogger(__name__)
 BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 sessions = {} # session_id -> metadata cache
+user_last_request = {} # user_id -> timestamp for rate limiting
+user_active_session = {} # user_id -> session_jid for cancel tracking
+MAX_SESSION_AGE = 3600 # session expiry age (1 hour)
+
+def clean_sessions():
+    now = time.time()
+    expired = [k for k, v in sessions.items() if now - v.get('_created', 0) > MAX_SESSION_AGE]
+    for k in expired:
+        sessions.pop(k, None)
 
 def get_size_str(size):
     if not size or size <= 0:
@@ -46,11 +58,36 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "- Capcut, Bilibili, dll."
     )
 
+async def cancel_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    session_jid = user_active_session.pop(user_id, None)
+    if session_jid:
+        sessions.pop(session_jid, None)
+        await update.message.reply_text("❌ Dibatalkan.")
+    else:
+        await update.message.reply_text("Tidak ada proses yang berjalan.")
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    clean_sessions()
     url = update.message.text.strip()
     if not url.startswith(('http://', 'https://')):
         await update.message.reply_text("Silakan kirim link URL yang valid (dimulai dengan http:// atau https://).")
         return
+        
+    user_id = update.effective_user.id
+    current_time = time.time()
+    
+    # Clean up entries older than 60 seconds periodically
+    expired = [uid for uid, timestamp in list(user_last_request.items()) if current_time - timestamp > 60]
+    for uid in expired:
+        user_last_request.pop(uid, None)
+        
+    last_time = user_last_request.get(user_id)
+    if last_time and (current_time - last_time < 5):
+        await update.message.reply_text("Sabar dulu ya, lagi proses 😄")
+        return
+        
+    user_last_request[user_id] = current_time
         
     status_msg = await update.message.reply_text("🔍 Fetching info...")
     
@@ -66,8 +103,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'title': result.get('title', 'Unknown'),
             'platform': result.get('platform', 'unknown'),
             'formats': result.get('formats', []) + result.get('audio', []),
-            'duration': result.get('duration', 0)
+            'duration': result.get('duration', 0),
+            '_created': time.time()
         }
+        user_active_session[user_id] = jid
         
         # Build keyboard layout
         keyboard = []
@@ -115,9 +154,11 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parts = data.split(":")
         action = parts[0]
         session_id = parts[1]
+        user_id = query.from_user.id
         
         session = sessions.get(session_id)
         if not session:
+            user_active_session.pop(user_id, None)
             await query.edit_message_text("❌ Sesi pencarian ini telah kedaluwarsa. Silakan kirim ulang link Anda.")
             return
             
@@ -140,6 +181,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     break
                     
             if not selected_fmt:
+                user_active_session.pop(user_id, None)
                 await query.edit_message_text("❌ Format tidak valid.")
                 return
                 
@@ -168,6 +210,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await asyncio.sleep(1.5)
             job = get_job(download_jid)
             if not job:
+                user_active_session.pop(user_id, None)
                 await query.edit_message_text("❌ Unduhan tidak ditemukan.")
                 return
                 
@@ -192,6 +235,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 filesize = job.get('filesize', 0)
                 
                 if not file_path or not os.path.exists(file_path):
+                    user_active_session.pop(user_id, None)
                     await query.edit_message_text("❌ File hasil unduhan tidak ditemukan di server.")
                     return
                     
@@ -248,24 +292,28 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                 filesize=job.get('filesize', 0)
                             )
                         except Exception as de:
-                            print(f"Error logging history: {de}")
+                            logger.error(f"Error logging history: {de}", exc_info=True)
                         try:
                             os.remove(file_path)
-                        except:
-                            pass
+                        except Exception as ex:
+                            logger.debug(f"Failed to remove file {file_path}: {ex}", exc_info=True)
                         pop_job(download_jid)
+                        user_active_session.pop(user_id, None)
                 except Exception as e:
+                    logger.error(f"Failed to send file: {e}", exc_info=True)
                     await query.edit_message_text(f"❌ Gagal mengirim file: {e}")
                     try:
                         os.remove(file_path)
-                    except:
-                        pass
+                    except Exception as ex:
+                        logger.debug(f"Failed to remove file on error {file_path}: {ex}", exc_info=True)
                     pop_job(download_jid)
+                    user_active_session.pop(user_id, None)
             elif status == 'error':
                 done = True
                 err = job.get('error', 'Gagal memproses file')
                 await query.edit_message_text(f"❌ Gagal mengunduh: {err}")
                 pop_job(download_jid)
+                user_active_session.pop(user_id, None)
 
 def run_bot_loop():
     loop = asyncio.new_event_loop()
@@ -276,6 +324,7 @@ def run_bot_loop():
     # Add handlers
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_cmd))
+    application.add_handler(CommandHandler("cancel", cancel_cmd))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     application.add_handler(CallbackQueryHandler(handle_callback))
     
@@ -284,8 +333,8 @@ def run_bot_loop():
 
 def start_bot():
     if not BOT_TOKEN:
-        print("Telegram bot token not found. Skipping bot startup.")
+        logger.info("Telegram bot token not found. Skipping bot startup.")
         return
     t = threading.Thread(target=run_bot_loop, daemon=True)
     t.start()
-    print("Telegram bot started successfully in background thread.")
+    logger.info("Telegram bot started successfully in background thread.")

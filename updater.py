@@ -2,7 +2,10 @@ import os
 import time
 import subprocess
 import threading
+import logging
 from config import BASE, YTDLP
+
+logger = logging.getLogger(__name__)
 
 UPDATED_FILE = os.path.join(BASE, 'yt-dlp-updated.txt')
 
@@ -18,20 +21,20 @@ def get_last_update_time():
         try:
             with open(UPDATED_FILE, 'r') as f:
                 return float(f.read().strip())
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to read yt-dlp-updated.txt: {e}", exc_info=True)
     return 0.0
 
 def run_update():
     try:
-        print("Auto-updating yt-dlp...")
+        logger.info("Auto-updating yt-dlp...")
         r = subprocess.run([YTDLP, '-U'], capture_output=True, text=True, timeout=300)
-        print(f"Update command output: {r.stdout} / {r.stderr}")
+        logger.info(f"Update command output: {r.stdout} / {r.stderr}")
         with open(UPDATED_FILE, 'w') as f:
             f.write(str(time.time()))
-        print(f"yt-dlp updated successfully. Version: {get_ytdlp_version()}")
+        logger.info(f"yt-dlp updated successfully. Version: {get_ytdlp_version()}")
     except Exception as e:
-        print(f"Failed to update yt-dlp: {e}")
+        logger.error(f"Failed to update yt-dlp: {e}", exc_info=True)
 
 def updater_loop():
     # Wait a bit after startup to not block initial app startup

@@ -1,6 +1,9 @@
 import os
 import threading
+import logging
 from config import YTDLP, DOWNLOADS
+
+logger = logging.getLogger(__name__)
 from jobs import jobs, create_job, get_queue_position
 from downloader import build_ytdlp_cmd, run, dl_direct, dl_zip
 

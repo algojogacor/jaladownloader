@@ -1,11 +1,18 @@
 import sqlite3
 import os
 import time
+import logging
 from config import BASE
 
+logger = logging.getLogger(__name__)
 DB_PATH = os.path.join(BASE, 'history.db')
 
+_db_initialized = False
+
 def init_db():
+    global _db_initialized
+    if _db_initialized:
+        return
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -21,10 +28,10 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    _db_initialized = True
 
 def add_entry(title, platform, url, filename, filesize):
     try:
-        init_db()
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
@@ -40,11 +47,10 @@ def add_entry(title, platform, url, filename, filesize):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"DB Error: {e}")
+        logger.error(f"DB Error: {e}", exc_info=True)
 
 def get_history():
     try:
-        init_db()
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('SELECT title, platform, url, filename, filesize, downloaded_at FROM downloads ORDER BY downloaded_at DESC LIMIT 50')
@@ -59,5 +65,5 @@ def get_history():
             'downloaded_at': r[5]
         } for r in rows]
     except Exception as e:
-        print(f"DB Error: {e}")
+        logger.error(f"DB Error: {e}", exc_info=True)
         return []

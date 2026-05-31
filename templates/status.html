@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Server Status — JalaDownloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root,[data-theme="dark"]{
+    color-scheme:dark;
+    --canvas:#08080C;
+    --surface-1:#111418;
+    --surface-2:#161a1f;
+    --surface-black:#050508;
+    --accent:#10b981;
+    --accent-hover:#34d399;
+    --accent-glow:rgba(16,185,129,0.15);
+    --ink:#f0f1f3;
+    --ink-muted:#b0b8c1;
+    --ink-subtle:#6b7280;
+    --hairline:#1e2430;
+    --hairline-strong:#2a3040;
+    --error:#dc2626;
+}
+[data-theme="light"]{
+    color-scheme:light;
+    --canvas:#f8f9fa;
+    --surface-1:#ffffff;
+    --surface-2:#f5f5f7;
+    --surface-black:#1d1d1f;
+    --accent:#059669;
+    --accent-hover:#047857;
+    --accent-glow:rgba(5,150,105,0.12);
+    --ink:#1d1d1f;
+    --ink-muted:#555;
+    --ink-subtle:#8a8a8a;
+    --hairline:#e0e0e0;
+    --hairline-strong:#ccc;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+    font-family:'Geist',system-ui,-apple-system,sans-serif;
+    font-size:17px;
+    font-weight:400;
+    line-height:1.6;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    background:var(--canvas);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+}
+::selection{background:var(--accent);color:#000}
+.nav-frosted{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:50;
+    height:48px;
+    display:flex;
+    align-items:center;
+    background:rgba(5,5,8,0.8);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:1px solid rgba(255,255,255,.05);
+}
+.btn-primary{
+    background:var(--accent);
+    color:#000;
+    font-size:14px;
+    font-weight:500;
+    line-height:1;
+    border-radius:9999px;
+    padding:6px 16px;
+    border:none;
+    cursor:pointer;
+    transition:filter .12s, transform .12s;
+    display:inline-flex;
+    align-items:center;
+    text-decoration:none;
+}
+.btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.container{
+    max-width:800px;
+    margin:0 auto;
+    padding:96px 24px 48px;
+}
+h1{
+    font-size:clamp(1.8rem,5vw,2.5rem);
+    font-weight:600;
+    margin-bottom:8px;
+    color:var(--ink);
+}
+.subtitle{
+    color:var(--ink-muted);
+    font-size:16px;
+    margin-bottom:32px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:var(--accent);
+    display:inline-block;
+    box-shadow:0 0 8px var(--accent);
+}
+.dot.offline{
+    background:var(--error);
+    box-shadow:0 0 8px var(--error);
+}
+.dot.pulse{
+    animation:pulse 1.5s infinite;
+}
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-bottom:32px;
+}
+@media(max-width:640px){
+    .grid{grid-template-columns:1fr}
+}
+.card{
+    background:var(--surface-1);
+    border:1px solid var(--hairline);
+    border-radius:18px;
+    padding:24px;
+    transition:border-color .2s, box-shadow .2s;
+}
+.card:hover{
+    background:var(--surface-2);
+    border-color:var(--hairline-strong);
+    box-shadow:0 0 30px var(--accent-glow);
+}
+.card h2{
+    font-size:13px;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--accent);
+    margin-bottom:12px;
+}
+.stat-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:8px 0;
+    border-bottom:1px solid var(--hairline);
+}
+.stat-row:last-child{
+    border-bottom:none;
+}
+.stat-label{
+    font-size:15px;
+    color:var(--ink-muted);
+}
+.stat-value{
+    font-size:16px;
+    font-weight:600;
+    color:var(--ink);
+}
+footer{
+    text-align:center;
+    padding:32px 24px;
+    font-size:13px;
+    color:var(--ink-subtle);
+    border-top:1px solid var(--hairline);
+    margin-top:48px;
+}
+@keyframes pulse{
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(1.1)}
+}
+</style>
+</head>
+<body>
+<nav class="nav-frosted">
+<div style="max-width:1200px;width:100%;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between">
+<a href="/" style="color:var(--ink);font-size:14px;font-weight:600;letter-spacing:-0.006em;text-decoration:none;display:flex;align-items:center;gap:8px">
+<span><span style="color:var(--accent)">Jala</span>Downloader</span>
+</a>
+<a class="btn-primary" href="/">Back</a>
+</div>
+</nav>
+
+<div class="container">
+    <h1>Server Status</h1>
+    <div class="subtitle">
+        <span id="statusDot" class="dot pulse"></span>
+        <span id="statusText">Monitoring server health...</span>
+    </div>
+
+    <div class="grid">
+        <!-- App Stats -->
+        <div class="card">
+            <h2>System & App Info</h2>
+            <div class="stat-row">
+                <span class="stat-label">Uptime</span>
+                <span id="uptimeVal" class="stat-value">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">App Version</span>
+                <span id="versionVal" class="stat-value">-</span>
+            </div>
+        </div>
+
+        <!-- Downloads Queue -->
+        <div class="card">
+            <h2>Downloads Queue</h2>
+            <div class="stat-row">
+                <span class="stat-label">Active Downloads</span>
+                <span id="activeJobsVal" class="stat-value">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Queued Downloads</span>
+                <span id="queuedJobsVal" class="stat-value">-</span>
+            </div>
+        </div>
+
+        <!-- Cache & Storage -->
+        <div class="card">
+            <h2>Cache & Storage</h2>
+            <div class="stat-row">
+                <span class="stat-label">Cache Size</span>
+                <span id="cacheSizeVal" class="stat-value">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Downloads Folder Size</span>
+                <span id="downloadsDirVal" class="stat-value">-</span>
+            </div>
+        </div>
+
+        <!-- Engine Info -->
+        <div class="card">
+            <h2>Downloader Engine</h2>
+            <div class="stat-row">
+                <span class="stat-label">yt-dlp Version</span>
+                <span id="ytdlpVersionVal" class="stat-value">-</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Last Updated</span>
+                <span id="ytdlpLastUpdatedVal" class="stat-value">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>&copy; 2026 JalaDownloader. Part of the JalaJO ecosystem.</footer>
+
+<script>
+const mql=window.matchMedia('(prefers-color-scheme:light)');
+if(mql.matches)document.documentElement.setAttribute('data-theme','light');
+mql.addEventListener('change',e=>document.documentElement.setAttribute('data-theme',e.matches?'light':'dark'));
+
+function formatUptime(seconds) {
+    if (seconds < 60) return seconds + 's';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m < 60) return m + 'm ' + s + 's';
+    const h = Math.floor(m / 60);
+    const rm = m % 60;
+    if (h < 24) return h + 'h ' + rm + 'm';
+    const d = Math.floor(h / 24);
+    const rh = h % 24;
+    return d + 'd ' + rh + 'h ' + rm + 'm';
+}
+
+async function fetchStatus() {
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    
+    try {
+        const [pingRes, ytdlpRes] = await Promise.all([
+            fetch('/ping'),
+            fetch('/admin/yt-dlp-version')
+        ]);
+        
+        if (!pingRes.ok || !ytdlpRes.ok) {
+            throw new Error("HTTP error");
+        }
+        
+        const pingData = await pingRes.json();
+        const ytdlpData = await ytdlpRes.json();
+        
+        // Update elements
+        document.getElementById('uptimeVal').textContent = formatUptime(pingData.uptime);
+        document.getElementById('versionVal').textContent = pingData.version || '-';
+        document.getElementById('activeJobsVal').textContent = pingData.active_jobs !== undefined ? pingData.active_jobs : '-';
+        document.getElementById('queuedJobsVal').textContent = pingData.queued_jobs !== undefined ? pingData.queued_jobs : '-';
+        document.getElementById('cacheSizeVal').textContent = pingData.cache_size !== undefined ? pingData.cache_size + ' items' : '-';
+        document.getElementById('downloadsDirVal').textContent = pingData.downloads_dir_size !== undefined ? pingData.downloads_dir_size + ' MB' : '-';
+        
+        document.getElementById('ytdlpVersionVal').textContent = ytdlpData.version || '-';
+        document.getElementById('ytdlpLastUpdatedVal').textContent = ytdlpData.last_updated || '-';
+        
+        // Mark as Online
+        statusDot.className = 'dot pulse';
+        statusText.textContent = 'Server is online and healthy';
+    } catch (e) {
+        // Mark as Offline
+        statusDot.className = 'dot offline pulse';
+        statusText.textContent = 'Unable to connect to server';
+    }
+}
+
+// Initial fetch and schedule every 10 seconds
+fetchStatus();
+setInterval(fetchStatus, 10000);
+</script>
+</body>
+</html>

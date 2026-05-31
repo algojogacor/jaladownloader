@@ -4,7 +4,18 @@ import os
 import time
 import uuid
 import threading
+import logging
 from flask import Flask, request, render_template, send_file, jsonify
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()  # also print to console
+    ]
+)
+logger = logging.getLogger(__name__)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_limiter.errors import RateLimitExceeded
@@ -38,6 +49,10 @@ def index():
 def privacy():
     return render_template('privacy.html')
 
+@app.route('/status-page')
+def status_page():
+    return render_template('status.html')
+
 @app.route('/terms')
 def terms():
     return render_template('terms.html')
@@ -45,6 +60,10 @@ def terms():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+
+# Cache downloads folder size
+_downloads_size_cache = None
+_downloads_size_last_checked = 0
 
 @app.route('/ping')
 def ping():
@@ -55,16 +74,22 @@ def ping():
     from cache import CACHE
     cache_size = len(CACHE)
     
-    total_size = 0
-    if os.path.exists(DOWNLOADS):
-        for dirpath, dirnames, filenames in os.walk(DOWNLOADS):
-            for f in filenames:
-                fp = os.path.join(dirpath, f)
-                try:
-                    total_size += os.path.getsize(fp)
-                except:
-                    pass
-    downloads_dir_size = round(total_size / (1024 * 1024), 2)
+    global _downloads_size_cache, _downloads_size_last_checked
+    current_time = time.time()
+    if _downloads_size_cache is None or current_time - _downloads_size_last_checked > 30:
+        total_size = 0
+        if os.path.exists(DOWNLOADS):
+            for dirpath, dirnames, filenames in os.walk(DOWNLOADS):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    try:
+                        total_size += os.path.getsize(fp)
+                    except:
+                        pass
+        _downloads_size_cache = round(total_size / (1024 * 1024), 2)
+        _downloads_size_last_checked = current_time
+        
+    downloads_dir_size = _downloads_size_cache
     
     return jsonify({
         'status': 'ok',
@@ -134,6 +159,11 @@ def start():
     
     if not url:
         return jsonify({'error': 'Isi linknya'}), 400
+    try:
+        from info_extractor import validate_url
+        validate_url(url)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
         
     jid = str(uuid.uuid4())[:8]
     res = enqueue_job(jid, url, fmt_id, ftype, direct_url, title, platform, items)
@@ -153,6 +183,11 @@ def start_zip():
     
     if not url:
         return jsonify({'error': 'Isi linknya'}), 400
+    try:
+        from info_extractor import validate_url
+        validate_url(url)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
         
     jid = str(uuid.uuid4())[:8]
     res = enqueue_job(jid, url, fmt_id, ftype, direct_url, title, platform, items)
@@ -194,19 +229,23 @@ def send_file_route(jid):
                 filesize=j.get('filesize', 0)
             )
         except Exception as e:
-            print(f"Error recording history: {e}")
+            logger.error(f"Error recording history: {e}")
         try:
             os.remove(j['path'])
             fn = j['file']
-            print(f'CLEANUP: {fn}')
-        except:
-            pass
+            logger.info(f'CLEANUP: {fn}')
+        except Exception as ex:
+            logger.debug(f"Cleanup remove failed: {ex}", exc_info=True)
         pop_job(jid)
     return resp
 
 def scheduler_loop():
     while True:
         time.sleep(3)
+        # Skip job check if there are no queued jobs
+        if not any(j.get('status') == 'queued' for j in jobs.values()):
+            continue
+            
         # Count active jobs where status == 'processing'
         active_count = sum(1 for j in jobs.values() if j.get('status') == 'processing')
         if active_count < 2: # MAX_CONCURRENT = 2
@@ -241,6 +280,6 @@ if __name__ == '__main__':
         from bot import start_bot
         start_bot()
     except Exception as e:
-        print(f"Failed to load Telegram bot: {e}")
+        logger.error(f"Failed to load Telegram bot: {e}")
         
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
