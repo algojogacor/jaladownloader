@@ -329,7 +329,7 @@ def run_bot_loop():
     application.add_handler(CallbackQueryHandler(handle_callback))
     
     # Start bot polling
-    application.run_polling(close_loop=False)
+    application.run_polling(close_loop=False, stop_signals=())
 
 def start_bot():
     if not BOT_TOKEN:
